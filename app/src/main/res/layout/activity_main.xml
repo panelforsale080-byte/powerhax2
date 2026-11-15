@@ -50,9 +50,10 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="ASTRAL LOADER"
+                        android:fontFamily="@font/pixel"
+                        android:text="AccelLoader"
                         android:textColor="@color/loader_text_primary"
-                        android:textSize="19sp"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -102,9 +103,10 @@
                             android:layout_height="wrap_content"
                             android:ellipsize="end"
                             android:maxLines="1"
-                            android:text="ASTRAL"
+                            android:fontFamily="@font/pixel"
+                            android:text="ACCEL"
                             android:textColor="@color/loader_text_primary"
-                            android:textSize="21sp"
+                            android:textSize="14sp"
                             android:textStyle="bold" />
 
                         <TextView

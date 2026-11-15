@@ -47,6 +47,10 @@ android {
     }
 }
 
+base {
+    archivesName.set("AccelLoader")
+}
+
 dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
     implementation("androidx.activity:activity-ktx:1.7.0")
