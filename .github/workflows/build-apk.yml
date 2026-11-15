@@ -25,7 +25,7 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_HOME"
           SDKM="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
           yes | "$SDKM" --licenses >/dev/null || true
-          "$SDKM" "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+          "$SDKM" "platforms;android-35" "build-tools;35.0.0" "platform-tools" "ndk;26.1.10909125"
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew

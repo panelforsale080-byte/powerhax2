@@ -764,7 +764,6 @@ class MainActivity : AppCompatActivity() {
                     payloadFileName = saved.name
                     remoteLibrarySize = saved.length().toInt()
                     showToast("Download successful")
-                    assetExtractor.extractAll()
                     if (!isLibraryReady()) {
                         resetLoginState("FAILED TO LOAD RUNTIME LIBRARY")
                         isReadyToInject = false
@@ -946,61 +945,39 @@ class MainActivity : AppCompatActivity() {
             inGspace = gspace,
             preferredTarget = preferred
         )
-        injectUiLog.line("libloader targets: ${targets.joinToString(" → ")}")
+        injectUiLog.line("accelinject targets: ${targets.joinToString(" → ")}")
 
         var loaded = false
         var lastExit = -1
         var winningTarget: String? = null
-        var processCrashed = false
+        val libPath = libraryFile.absolutePath
         for (target in targets) {
-            if (processCrashed) break
-            val cmd = InjectionCommandBuilder.build(
-                cacheDirectory = cacheDirectory,
-                library = library,
-                libraryFileName = libraryFileName,
-                injectionMethod = injectionMethod,
-                hasRootAccess = hasRoot,
-                injectTarget = target
-            )
             injectUiLog.line("---")
-            injectUiLog.line("Command: $cmd")
-            Log.i(TAG, "Inject command: $cmd")
-
-            val shellResult = withContext(Dispatchers.IO) { commandRunner.runSync(cmd) }
-            lastExit = shellResult.exitCode
-            injectUiLog.line("libloader exit=$lastExit")
-
-            val out = shellResult.output.trim()
-            if (out.isNotEmpty()) {
-                out.lines().take(20).forEach { injectUiLog.line(it) }
-                if (out.contains("method 2", ignoreCase = true) ||
-                    out.contains("method2", ignoreCase = true)
-                ) {
-                    injectUiLog.line(">>> Loader recommends METHOD 2 (change in app settings menu)")
-                }
+            injectUiLog.line("Inject target=$target")
+            injectUiLog.line("Library=$libPath")
+            lastExit = withContext(Dispatchers.IO) {
+                AccelInject.nativeInject(target, libPath)
             }
-
+            injectUiLog.line("accelinject rc=$lastExit")
+            if (lastExit == -100) {
+                injectUiLog.line("arm64 required for inject (32-bit stub)")
+                break
+            }
             delay(1200)
             val verifyPid = withContext(Dispatchers.IO) {
                 ProcessFinder.findCodm()?.pid ?: activeUnity.pid
             }
-            val analysis = withContext(Dispatchers.IO) {
-                InjectShellAnalyzer.analyze(shellResult.output, activeUnity.pid)
-            }
-            if (analysis.processTerminated) {
-                processCrashed = true
-                analysis.userHints.forEach { injectUiLog.line(it) }
-                injectUiLog.line("Stopped — no extra inject attempts (would crash more)")
+            if (!proc_alive(verifyPid)) {
+                injectUiLog.line("Process ended after inject attempt")
                 break
             }
-
             loaded = withContext(Dispatchers.IO) { InjectVerifier.isLibLoaded(verifyPid, libraryFileName) }
             if (loaded) {
                 winningTarget = target
-                injectUiLog.line("OK: libTool.so in /proc/$verifyPid/maps")
+                injectUiLog.line("OK: $libraryFileName in /proc/$verifyPid/maps")
                 break
             }
-            injectUiLog.line("libTool not in maps for pid $verifyPid — try next target")
+            injectUiLog.line("$libraryFileName not in maps for pid $verifyPid — try next target")
         }
 
         winningTarget?.let { loaderPreferences.savePreferredInjectTarget(it) }
@@ -1013,11 +990,6 @@ class MainActivity : AppCompatActivity() {
                     showToast("Inject OK — Unity process")
                     loginButton.text = "RE-INJECT"
                 }
-                processCrashed -> {
-                    injectUiLog.line("=== MLBB CRASHED DURING INJECT ===")
-                    showToast("Game crashed — reopen lobby, wait, inject once")
-                    loginButton.text = "RE-INJECT"
-                }
                 lastExit != 0 -> {
                     injectUiLog.line("=== INJECT FAILED (exit $lastExit) ===")
                     showToast("Inject failed — see INJECT LOG")
@@ -1025,7 +997,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 else -> {
                     injectUiLog.line("=== INJECT UNCLEAR — try METHOD 2 or 3 ===")
-                    showToast("No libTool in Unity maps — METHOD 2 + lobby")
+                    showToast("Library not in game maps — open CODM and retry")
                     loginButton.text = "RE-INJECT"
                 }
             }
@@ -1041,6 +1013,11 @@ class MainActivity : AppCompatActivity() {
         if (!success) {
             updateMethodLabel()
         }
+    }
+
+    private fun proc_alive(pid: Int): Boolean {
+        if (pid <= 0) return false
+        return File("/proc/$pid").exists()
     }
 
     private fun libraryForInjection(): SelectedLibrary {
