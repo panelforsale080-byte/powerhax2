@@ -492,12 +492,7 @@ class MainActivity : AppCompatActivity() {
             row.isEnabled = available
             row.alpha = if (available) 1f else 0.58f
 
-            Glide.with(this)
-                .load(library.optString("LOGO"))
-                .placeholder(R.drawable.astral_logo)
-                .error(R.drawable.astral_logo)
-                .centerCrop()
-                .into(row.findViewById(R.id.drawer_logo))
+            row.findViewById<ImageView>(R.id.drawer_logo).setImageResource(R.drawable.accel_mark)
 
             row.setOnClickListener {
                 if (available) {
