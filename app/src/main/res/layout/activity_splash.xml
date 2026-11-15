@@ -3,77 +3,52 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/loader_background"
-    android:padding="24dp">
+    android:padding="20dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:background="@drawable/splash_modal"
-        android:elevation="8dp"
         android:gravity="center_horizontal"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="20dp">
 
         <ImageView
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:background="@drawable/circle"
-            android:contentDescription="Astral logo"
-            android:scaleType="centerCrop"
-            android:src="@drawable/astral_logo" />
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:contentDescription="Accel"
+            android:src="@drawable/accel_mark" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:letterSpacing="0.12"
+            android:layout_marginTop="10dp"
             android:fontFamily="@font/pixel"
-            android:text="ACCEL"
+            android:text="AccelLoader"
             android:textColor="#F1F4F8"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:textSize="8sp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:letterSpacing="0.18"
+            android:layout_marginTop="4dp"
             android:fontFamily="@font/pixel"
-            android:text="LOADER"
-            android:textColor="#8795A5"
-            android:textSize="11sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Preparing your session"
-            android:textColor="#DCE4ED"
-            android:textSize="14sp" />
+            android:text="Owner Xorel"
+            android:textColor="#B5B5B5"
+            android:textSize="6sp" />
 
         <ProgressBar
             android:id="@+id/progressBarSplash"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
-            android:layout_height="6dp"
-            android:layout_marginTop="16dp"
+            android:layout_height="4dp"
+            android:layout_marginTop="18dp"
             android:indeterminate="false"
             android:max="100"
             android:progress="0"
-            android:progressBackgroundTint="#2A3745"
+            android:progressBackgroundTint="#44FFFFFF"
             android:progressTint="@color/loader_text_primary"
             android:saveEnabled="false" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:letterSpacing="0.14"
-            android:text="PLEASE WAIT"
-            android:textColor="#718090"
-            android:textSize="9sp"
-            android:textStyle="bold" />
-
     </LinearLayout>
-
 </FrameLayout>

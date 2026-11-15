@@ -35,7 +35,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.bumptech.glide.Glide
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.Dispatchers
@@ -87,7 +86,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var injectLogView: TextView
     private lateinit var injectLogScroll: ScrollView
     private lateinit var injectMethodLabel: TextView
+    private lateinit var libraryDownloadStatus: TextView
+    private lateinit var libraryDownloadProgress: ProgressBar
     private val injectLogBuffer = StringBuilder()
+    private val injectLogLines = ArrayDeque<String>(6)
     private lateinit var injectUiLog: InjectUiLog
     
     private val commandRunner = CommandRunner()
@@ -117,12 +119,6 @@ class MainActivity : AppCompatActivity() {
         libraryCount = findViewById(R.id.library_count)
         setupLibraryDrawer()
         
-        val appCacheDir = cacheDir.absolutePath
-        val outputFile = File(appCacheDir, LIBRARY_FILE_NAME)
-        if (outputFile.exists()) {
-            outputFile.delete()
-        }
-        
         val versionCode = getAppVersionCode()
         
         progressBar = findViewById(R.id.progressBar)
@@ -142,14 +138,16 @@ class MainActivity : AppCompatActivity() {
         injectLogView = findViewById(R.id.inject_log)
         injectLogScroll = findViewById(R.id.inject_log_scroll)
         injectMethodLabel = findViewById(R.id.inject_method_label)
+        libraryDownloadStatus = findViewById(R.id.library_download_status)
+        libraryDownloadProgress = findViewById(R.id.library_download_progress)
         injectUiLog = InjectUiLog { line -> appendInjectLogLine(line) }
         appBanner = findViewById(R.id.app_banner)
-        
-        Glide.with(this)
-            .load(R.drawable.astral_logo)
-            .centerCrop()
-            .into(appBanner)
-        
+        appBanner.setImageResource(R.drawable.accel_mark)
+
+        findViewById<MaterialButton>(R.id.telegram_button).setOnClickListener {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/axcelLOki")))
+        }
+
         loaderPreferences = LoaderPreferences(this)
 
         val savedMode = loaderPreferences.getMode()
@@ -253,34 +251,44 @@ class MainActivity : AppCompatActivity() {
             }
         )
         updateMethodLabel()
-        injectUiLog.line("Switched to ${InjectionCommandBuilder.methodDescription(next, commandRunner.hasRootAccess())}")
-        showToast("Inject method: $next")
+        userLog("method $next")
+        showToast("Method $next")
+    }
+
+    private fun userLog(message: String) {
+        injectUiLog.line(message)
     }
 
     private fun appendInjectLogLine(line: String) {
+        val safe = sanitizeLogLine(line) ?: return
         runOnUiThread {
-            if (injectLogBuffer.length > 12_000) {
-                injectLogBuffer.delete(0, injectLogBuffer.length - 8_000)
-            }
-            injectLogBuffer.append(line).append('\n')
-            injectLogView.text = injectLogBuffer.toString()
-            injectLogScroll.post { injectLogScroll.fullScroll(View.FOCUS_DOWN) }
+            injectLogLines.addLast(safe)
+            while (injectLogLines.size > 4) injectLogLines.removeFirst()
+            injectLogView.text = injectLogLines.joinToString("\n")
         }
+    }
+
+    private fun sanitizeLogLine(raw: String): String? {
+        if (raw.isBlank()) return null
+        val lower = raw.lowercase()
+        if (lower.contains("http") || lower.contains("github") || lower.contains("passwordandlicense")) return null
+        if (raw.contains("/data/") || raw.contains("/proc/") || raw.contains(".so/")) return null
+        var s = raw.replace(Regex("""\[\d{2}:\d{2}:\d{2}\]\s*"""), "")
+        s = s.replace(Regex("com\\.garena\\.game\\.codm[^\\s]*"), "CODM")
+        s = s.replace(Regex("""pid=\d+"""), "game")
+        s = s.replace(Regex("""\d{4,}"""), "#")
+        if (s.length > 72) s = s.take(69) + "…"
+        return s.trim()
     }
 
     private fun clearInjectLog() {
         injectLogBuffer.clear()
-        injectLogView.text = ""
+        injectLogLines.clear()
+        injectLogView.text = "—"
     }
 
     private fun updateMethodLabel() {
-        lifecycleScope.launch(Dispatchers.IO) {
-            val rooted = commandRunner.hasRootAccess()
-            val text = InjectionCommandBuilder.methodDescription(injectionMethod, rooted)
-            withContext(Dispatchers.Main) {
-                injectMethodLabel.text = text
-            }
-        }
+        injectMethodLabel.text = "method $injectionMethod"
     }
     
     private fun setupDelaySpinner() {
@@ -337,6 +345,7 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun setupLibraryDrawer() {
+        if (libraryDrawer.layoutParams.width <= 0) return
         libraryDrawer.post {
             libraryDrawer.translationX = -libraryDrawer.width.toFloat()
         }
@@ -627,7 +636,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             isReadyToInject = false
             loginButton.isEnabled = true
-            loginButton.text = if (isLoadingLibrary) "LOADING..." else "LOAD LIBRARY"
+            loginButton.text = if (isLoadingLibrary) "…" else "LOAD"
             beginLibraryLoad()
         }
         val logoUrl = jsonObject.optString("LOGO")
@@ -692,13 +701,15 @@ class MainActivity : AppCompatActivity() {
             return
         }
         isLoadingLibrary = true
+        setLibraryChip("load")
+        libraryDownloadStatus.text = "downloading…"
         loginButton.isEnabled = false
         librarySpinner.isEnabled = false
         delaySpinner.isEnabled = false
         methodSpinner.isEnabled = false
         radioGroup.isEnabled = false
         saveSelectedLibrary(selectedLibrary.name)
-        loginButton.text = "LOADING..."
+        loginButton.text = "…"
         proceedWithDownload()
     }
 
@@ -731,15 +742,29 @@ class MainActivity : AppCompatActivity() {
         )
         findViewById<TextView>(R.id.library_name).text = "CODM"
         findViewById<TextView>(R.id.library_game).text = "Call of Duty Mobile"
-        findViewById<TextView>(R.id.library_package).apply {
-            text = DEFAULT_GAME_PACKAGE
-            visibility = View.VISIBLE
+        findViewById<TextView>(R.id.library_version).text = "1.6.59"
+        setLibraryChip("idle")
+        if (isLibraryReady()) {
+            applyLibraryReadyUi()
+            isReadyToInject = true
+            loginButton.text = "INJECT"
+        } else {
+            libraryDownloadStatus.text = "fetching module…"
+            beginLibraryLoad()
         }
-        findViewById<TextView>(R.id.library_status).apply {
-            text = "● Ready"
-            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.loader_status_active))
-        }
-        beginLibraryLoad()
+    }
+
+    private fun setLibraryChip(state: String) {
+        findViewById<TextView>(R.id.library_status).text = state
+    }
+
+    private fun applyLibraryReadyUi() {
+        val f = File(cacheDir, payloadFileName)
+        val kb = (f.length() / 1024).coerceAtLeast(1)
+        libraryDownloadStatus.text = "module ready"
+        libraryDownloadProgress.visibility = View.GONE
+        findViewById<TextView>(R.id.library_package).text = "$payloadFileName · ${kb}kb"
+        setLibraryChip("ready")
     }
 
     private fun proceedWithDownload() {
@@ -755,24 +780,26 @@ class MainActivity : AppCompatActivity() {
                     return@launch
                 }
                 withContext(Dispatchers.Main) {
-                    injectUiLog.line("Library: $payloadFileName")
-                    injectUiLog.line("URL: $libraryDownloadUrl")
+                    libraryDownloadStatus.text = "downloading…"
+                    libraryDownloadProgress.visibility = View.VISIBLE
+                    libraryDownloadProgress.progress = 0
                 }
                 downloadLibraryIfNeeded(this@MainActivity, libraryDownloadUrl, payloadFileName) { success ->
                 if (success) {
                     val saved = GithubSoSource.materialize(File(cacheDir, payloadFileName))
                     payloadFileName = saved.name
                     remoteLibrarySize = saved.length().toInt()
-                    showToast("Download successful")
+                    showToast("Module saved")
                     if (!isLibraryReady()) {
                         resetLoginState("FAILED TO LOAD RUNTIME LIBRARY")
                         isReadyToInject = false
                     } else {
                         lifecycleScope.launch(Dispatchers.Main) {
-                            delay(2500)
+                            delay(400)
                             isLoadingLibrary = false
+                            applyLibraryReadyUi()
                             loginButton.text = "INJECT"
-                            showToast("Ready to inject")
+                            userLog("module ok")
                             loginButton.isEnabled = true
                             radioGroup.isEnabled = true
                             delaySpinner.isEnabled = true
@@ -822,8 +849,7 @@ class MainActivity : AppCompatActivity() {
         val injectLibrary = libraryForInjection()
         val gamePackage = DEFAULT_GAME_PACKAGE
         clearInjectLog()
-        injectUiLog.line("=== INJECT START ===")
-        injectUiLog.line("Package: $gamePackage")
+        userLog("inject start")
         if (radioAuto.isChecked) {
             launchGame(gamePackage)
             lifecycleScope.launch {
@@ -857,85 +883,41 @@ class MainActivity : AppCompatActivity() {
         gamePackage: String,
         library: SelectedLibrary
     ) {
-        val hasRoot = withContext(Dispatchers.IO) { commandRunner.hasRootAccess() }
-        injectUiLog.line(InjectionCommandBuilder.methodDescription(injectionMethod, hasRoot))
-
         val gspace = withContext(Dispatchers.IO) { MlbbInjectStaging.detectGspaceFromProc() }
-        if (gspace) {
-            injectUiLog.line("GSpace/virtual environment detected")
-            injectUiLog.line("GSpace: use -target com.mobile.legends:UnityKillsMe (not PID)")
-            if (injectionMethod == "1") {
-                injectUiLog.line("Tip: tap method label → METHOD 2 if inject fails")
-            }
-        }
-
-        injectUiLog.line("Scanning processes…")
-        val initial = withContext(Dispatchers.IO) { ProcessFinder.listCodmCandidates() }
-        if (initial.isEmpty()) {
-            injectUiLog.line("No CODM process yet — open the game")
-        } else {
-            initial.take(8).forEach { injectUiLog.line("pid=${it.pid} ${it.label}") }
-        }
-
-        injectUiLog.line("Waiting for com.garena.game.codm (45s max)…")
+        userLog("find CODM…")
         var unity: ProcessFinder.Target? = null
         waitLoop@ for (attempt in 0 until 90) {
             unity = withContext(Dispatchers.IO) { ProcessFinder.findCodm() }
             if (unity != null) break@waitLoop
-            if (attempt % 4 == 0) {
-                val snap = withContext(Dispatchers.IO) { ProcessFinder.listCodmCandidates() }
-                injectUiLog.line("poll ${attempt + 1}/90 — ${snap.size} proc(s)")
-            }
+            if (attempt % 8 == 0) userLog("waiting game…")
             delay(500)
         }
 
         val targetUnity = unity
         if (targetUnity == null) {
-            injectUiLog.line("FAIL: com.garena.game.codm process not found")
-            injectUiLog.line("Open CODM then RE-INJECT")
+            userLog("game not found")
             withContext(Dispatchers.Main) {
-                showToast("CODM process not found")
+                showToast("Open CODM first")
                 finishInjectUi(success = false)
             }
             return
         }
 
         var activeUnity = targetUnity
-        injectUiLog.line("Unity target: pid=${activeUnity.pid}")
-        injectUiLog.line("Cmdline: ${activeUnity.label}")
+        userLog("game ok")
 
         if (gspace) {
-            val settleSec = maxOf(delaySeconds, 15)
-            injectUiLog.line("GSpace settle ${settleSec}s — keep MLBB in lobby (reduces crash)")
-            delay(settleSec * 1000L)
+            delay(maxOf(delaySeconds, 12) * 1000L)
             val refreshed = withContext(Dispatchers.IO) { ProcessFinder.findCodm() }
-            if (refreshed != null) {
-                activeUnity = refreshed
-                injectUiLog.line("Unity after settle: pid=${activeUnity.pid}")
-            } else {
-                injectUiLog.line("Unity gone after settle — reopen MLBB")
+            if (refreshed != null) activeUnity = refreshed
+            else {
+                userLog("game closed")
                 withContext(Dispatchers.Main) {
-                    showToast("MLBB closed — open lobby again")
+                    showToast("Reopen CODM")
                     finishInjectUi(success = false)
                 }
                 return
             }
-        }
-
-        val directStage = withContext(Dispatchers.IO) {
-            MlbbInjectStaging.tryDirectCopy(gamePackage, libraryFile, gspace)
-        }
-        if (directStage != null) {
-            injectUiLog.line("Staged (app): $directStage")
-        } else {
-            injectUiLog.line("App staging skipped (normal in GSpace without root)")
-        }
-
-        val stageScript = MlbbInjectStaging.buildRootCopyScript(gamePackage, libraryFile, gspace)
-        if (stageScript.isNotBlank() && hasRoot) {
-            injectUiLog.line("Staging libTool.so (root)…")
-            val stageResult = withContext(Dispatchers.IO) { commandRunner.runSync(stageScript) }
-            injectUiLog.line("Root stage exit=${stageResult.exitCode}")
         }
 
         val preferred = loaderPreferences.getPreferredInjectTarget()
@@ -945,39 +927,34 @@ class MainActivity : AppCompatActivity() {
             inGspace = gspace,
             preferredTarget = preferred
         )
-        injectUiLog.line("accelinject targets: ${targets.joinToString(" → ")}")
-
         var loaded = false
         var lastExit = -1
         var winningTarget: String? = null
         val libPath = libraryFile.absolutePath
         for (target in targets) {
-            injectUiLog.line("---")
-            injectUiLog.line("Inject target=$target")
-            injectUiLog.line("Library=$libPath")
+            userLog("inject…")
             lastExit = withContext(Dispatchers.IO) {
                 AccelInject.nativeInject(target, libPath)
             }
-            injectUiLog.line("accelinject rc=$lastExit")
             if (lastExit == -100) {
-                injectUiLog.line("arm64 required for inject (32-bit stub)")
+                userLog("need arm64")
                 break
             }
+            if (lastExit == 0) userLog("rc ok") else userLog("rc $lastExit")
             delay(1200)
             val verifyPid = withContext(Dispatchers.IO) {
                 ProcessFinder.findCodm()?.pid ?: activeUnity.pid
             }
             if (!proc_alive(verifyPid)) {
-                injectUiLog.line("Process ended after inject attempt")
+                userLog("game stopped")
                 break
             }
             loaded = withContext(Dispatchers.IO) { InjectVerifier.isLibLoaded(verifyPid, libraryFileName) }
             if (loaded) {
                 winningTarget = target
-                injectUiLog.line("OK: $libraryFileName in /proc/$verifyPid/maps")
+                userLog("loaded")
                 break
             }
-            injectUiLog.line("$libraryFileName not in maps for pid $verifyPid — try next target")
         }
 
         winningTarget?.let { loaderPreferences.savePreferredInjectTarget(it) }
@@ -985,19 +962,18 @@ class MainActivity : AppCompatActivity() {
         withContext(Dispatchers.Main) {
             when {
                 loaded -> {
-                    injectUiLog.line("=== INJECT SUCCESS ===")
-                    winningTarget?.let { injectUiLog.line("Saved target for next time: $it") }
-                    showToast("Inject OK — Unity process")
+                    userLog("done")
+                    showToast("Inject OK")
                     loginButton.text = "RE-INJECT"
                 }
                 lastExit != 0 -> {
-                    injectUiLog.line("=== INJECT FAILED (exit $lastExit) ===")
-                    showToast("Inject failed — see INJECT LOG")
-                    loginButton.text = "RETRY INJECT"
+                    userLog("failed")
+                    showToast("Inject failed")
+                    loginButton.text = "RETRY"
                 }
                 else -> {
-                    injectUiLog.line("=== INJECT UNCLEAR — try METHOD 2 or 3 ===")
-                    showToast("Library not in game maps — open CODM and retry")
+                    userLog("retry?")
+                    showToast("Try again in match")
                     loginButton.text = "RE-INJECT"
                 }
             }
@@ -1070,13 +1046,12 @@ class MainActivity : AppCompatActivity() {
                         success = true
                     } else {
                         withContext(Dispatchers.Main) {
-                            showToast("Downloading .so...")
-                            progressBar.visibility = View.VISIBLE
-                            progressBar.progress = 0
+                            libraryDownloadProgress.visibility = View.VISIBLE
+                            libraryDownloadProgress.progress = 0
                         }
                         success = libraryDownloader.download(url, libraryFileName) { progress ->
                             runOnUiThread {
-                                progressBar.progress = progress
+                                libraryDownloadProgress.progress = progress
                             }
                         }
                         if (success && outputFile.exists()) {
@@ -1091,8 +1066,8 @@ class MainActivity : AppCompatActivity() {
 
             withContext(Dispatchers.Main) {
                 callback(success)
-                if (::progressBar.isInitialized) {
-                    progressBar.visibility = View.GONE
+                if (::libraryDownloadProgress.isInitialized) {
+                    libraryDownloadProgress.visibility = View.GONE
                 }
             }
         }
