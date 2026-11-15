@@ -6,6 +6,7 @@
     android:padding="24dp">
 
     <LinearLayout
+        android:id="@+id/splash_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -15,27 +16,30 @@
         android:padding="22dp">
 
         <ImageView
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:id="@+id/splash_mark"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:contentDescription="Accel"
             android:src="@mipmap/ic_launcher" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="10dp"
             android:fontFamily="@font/pixel"
+            android:letterSpacing="0.16"
             android:text="Accel"
             android:textColor="@color/loader_text_primary"
-            android:textSize="12sp" />
+            android:textSize="9sp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="3dp"
+            android:letterSpacing="0.06"
             android:text="Owner Xorel"
             android:textColor="@color/loader_text_muted"
-            android:textSize="10sp" />
+            android:textSize="8sp" />
 
         <ProgressBar
             android:id="@+id/progressBarSplash"

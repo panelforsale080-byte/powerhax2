@@ -145,6 +145,7 @@ class MainActivity : AppCompatActivity() {
         appBanner.setImageResource(R.drawable.accel_mark)
         findViewById<TextView>(R.id.header_build).text =
             "v${packageManager.getPackageInfo(packageName, 0).versionName}"
+        playEntrance()
 
         findViewById<MaterialButton>(R.id.telegram_button).setOnClickListener {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/axcelLOki")))
@@ -676,6 +677,30 @@ class MainActivity : AppCompatActivity() {
         isReadyToInject = false
     }
 
+    private fun playEntrance() {
+        listOf(R.id.card_header, R.id.card_profile, R.id.card_module).forEachIndexed { index, id ->
+            findViewById<View>(id).apply {
+                alpha = 0f
+                translationY = 36f
+                animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setStartDelay(80L * index)
+                    .setDuration(460)
+                    .setInterpolator(DecelerateInterpolator())
+                    .start()
+            }
+        }
+        appBanner.scaleX = 0.86f
+        appBanner.scaleY = 0.86f
+        appBanner.animate()
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(520)
+            .setInterpolator(DecelerateInterpolator())
+            .start()
+    }
+
     private fun startCodmLoad() {
         selectedLibrary = SelectedLibrary(
             name = "CODM",
@@ -836,16 +861,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         var activeUnity = targetUnity
-        userLog("game ok")
 
         if (gspace) {
             delay(maxOf(delaySeconds, 12) * 1000L)
             val refreshed = withContext(Dispatchers.IO) { ProcessFinder.findCodm() }
+                ?: ensureCodmRunning(gamePackage, maxAttempts = 60)
             if (refreshed != null) activeUnity = refreshed
             else {
-                userLog("game closed")
+                userLog("game lost")
                 withContext(Dispatchers.Main) {
-                    showToast("Reopen CODM")
                     finishInjectUi(success = false)
                 }
                 return

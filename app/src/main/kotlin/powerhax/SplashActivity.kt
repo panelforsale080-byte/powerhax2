@@ -5,7 +5,8 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.widget.ProgressBar
+import android.view.animation.DecelerateInterpolator
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -75,6 +76,16 @@ class SplashActivity : AppCompatActivity() {
         }
 
         setContentView(R.layout.activity_splash)
+        val splashCard = findViewById<android.view.View>(R.id.splash_card)
+        val splashMark = findViewById<ImageView>(R.id.splash_mark)
+        splashCard.alpha = 0f
+        splashCard.translationY = 24f
+        splashCard.animate().alpha(1f).translationY(0f).setDuration(480)
+            .setInterpolator(DecelerateInterpolator()).start()
+        splashMark.scaleX = 0.8f
+        splashMark.scaleY = 0.8f
+        splashMark.animate().scaleX(1f).scaleY(1f).setDuration(560)
+            .setInterpolator(DecelerateInterpolator()).start()
 
         progressBar = findViewById(R.id.progressBarSplash)
         progressBar.progress = 0
