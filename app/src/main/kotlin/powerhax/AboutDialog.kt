@@ -2,17 +2,14 @@ package com.accel.loader
 
 import android.app.Dialog
 import android.content.Context
-import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.view.Window
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 
 class AboutDialog(context: Context) : Dialog(context) {
@@ -23,7 +20,6 @@ class AboutDialog(context: Context) : Dialog(context) {
         setContentView(R.layout.activity_about)
 
         findViewById<View>(R.id.about_back).setOnClickListener { dismiss() }
-        findViewById<View>(R.id.about_telegram).setOnClickListener { openTelegram() }
         bindDetails()
     }
 
@@ -44,9 +40,7 @@ class AboutDialog(context: Context) : Dialog(context) {
 
     private fun bindDetails() {
         val details = listOf(
-            Detail(R.id.detail_developer, R.drawable.ic_user, "Developer", "PowerHAX"),
-            Detail(R.id.detail_username, R.drawable.ic_about, "Username", "@PowerHaxxxx"),
-            Detail(R.id.detail_channel, R.drawable.ic_telegram, "Channel", "t.me/power_haxx"),
+            Detail(R.id.detail_developer, R.drawable.ic_user, "Developer", "Accel"),
             Detail(R.id.detail_version, R.drawable.ic_package, "App Version", "1.0")
         )
 
@@ -56,14 +50,6 @@ class AboutDialog(context: Context) : Dialog(context) {
             row.findViewById<TextView>(R.id.about_detail_label).text = detail.label
             row.findViewById<TextView>(R.id.about_detail_value).text = detail.value
         }
-    }
-
-    private fun openTelegram() {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/powerhaxxxx"))
-        runCatching { context.startActivity(intent) }
-            .onFailure {
-                Toast.makeText(context, "Unable to open Telegram", Toast.LENGTH_SHORT).show()
-            }
     }
 
     private data class Detail(

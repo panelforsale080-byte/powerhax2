@@ -1,4 +1,4 @@
-# powerhax2
+# Accel
 
 Loader for `com.garena.game.codm`. No license key and no panel login.
 
@@ -8,4 +8,4 @@ On open it downloads the `.so` already stored in [PasswordAndLicense](https://gi
 
 ## APK
 
-Actions → **Build APK** → artifact **powerhax2-debug**.
+Actions → **Build APK** → artifact **Accel**.

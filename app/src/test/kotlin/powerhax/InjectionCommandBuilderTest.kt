@@ -9,7 +9,7 @@ class InjectionCommandBuilderTest {
     @Test
     fun buildsAnInjectionCommandFromSelectedLibrary() {
         val library = SelectedLibrary(
-            name = "POWERHAX",
+            name = "Accel",
             architecture = "64bit",
             jniKey = "test-key",
             gamePackage = "com.example.game"

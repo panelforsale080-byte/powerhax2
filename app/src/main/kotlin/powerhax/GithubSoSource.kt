@@ -129,7 +129,7 @@ object GithubSoSource {
 
     private fun open(url: String): HttpURLConnection {
         val conn = URL(url).openConnection() as HttpURLConnection
-        conn.setRequestProperty("User-Agent", "powerhax2")
+        conn.setRequestProperty("User-Agent", "Accel")
         conn.setRequestProperty("Accept", "application/vnd.github+json")
         conn.connectTimeout = 15_000
         conn.readTimeout = 20_000
