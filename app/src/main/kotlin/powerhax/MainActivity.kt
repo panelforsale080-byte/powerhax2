@@ -118,6 +118,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(null)
         setContentView(R.layout.activity_main)
+        loaderPreferences = LoaderPreferences(this)
 
         mainScroll = findViewById(R.id.main_scroll)
         libraryDrawer = findViewById(R.id.library_drawer)
@@ -164,8 +165,6 @@ class MainActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.telegram_button).setOnClickListener {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/axcelLOki")))
         }
-
-        loaderPreferences = LoaderPreferences(this)
 
         val savedMode = loaderPreferences.getMode()
         if (savedMode == "auto") {
