@@ -239,7 +239,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="140dp"
                     android:layout_marginTop="4dp"
-                    android:background="#0A0E14"
+                    android:background="#66383838"
                     android:fillViewport="true"
                     android:padding="8dp">
 
@@ -247,7 +247,7 @@
                         android:id="@+id/inject_log"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:fontFamily="monospace"
+                        android:fontFamily="@font/pixel"
                         android:text="Waiting for inject…"
                         android:textColor="@color/loader_text_secondary"
                         android:textIsSelectable="true"
