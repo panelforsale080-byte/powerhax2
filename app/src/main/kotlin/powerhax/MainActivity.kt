@@ -85,11 +85,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var libraryCount: TextView
     private lateinit var injectLogView: TextView
     private lateinit var injectLogScroll: ScrollView
-    private lateinit var injectMethodLabel: TextView
     private lateinit var libraryDownloadStatus: TextView
     private lateinit var libraryDownloadProgress: ProgressBar
     private lateinit var libraryDownloadPercent: TextView
-    private lateinit var featureCacheLabel: TextView
     private val injectLogBuffer = StringBuilder()
     private val injectLogLines = ArrayDeque<String>(6)
     private lateinit var injectUiLog: InjectUiLog
@@ -139,11 +137,9 @@ class MainActivity : AppCompatActivity() {
         rootStatusView = findViewById(R.id.root_status)
         injectLogView = findViewById(R.id.inject_log)
         injectLogScroll = findViewById(R.id.inject_log_scroll)
-        injectMethodLabel = findViewById(R.id.inject_method_label)
         libraryDownloadStatus = findViewById(R.id.library_download_status)
         libraryDownloadProgress = findViewById(R.id.library_download_progress)
         libraryDownloadPercent = findViewById(R.id.library_download_percent)
-        featureCacheLabel = findViewById(R.id.feature_cache_label)
         injectUiLog = InjectUiLog { line -> appendInjectLogLine(line) }
         appBanner = findViewById(R.id.app_banner)
         appBanner.setImageResource(R.drawable.accel_mark)
@@ -170,12 +166,9 @@ class MainActivity : AppCompatActivity() {
         val savedMethod = loaderPreferences.getInjectionMethod()
         
         delaySpinner.setSelection(savedDelay)
-        methodSpinner.setSelection(when (savedMethod) {
-            "1" -> 0
-            "2" -> 1
-            "3" -> 2
-            else -> 0
-        })
+        injectionMethod = "1"
+        loaderPreferences.saveInjectionMethod("1")
+        methodSpinner.setSelection(0)
         
         delaySpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
@@ -185,20 +178,6 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
         
-        methodSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                injectionMethod = when (position) {
-                    0 -> "1"
-                    1 -> "2"
-                    2 -> "3"
-                    else -> "1"
-                }
-                loaderPreferences.saveInjectionMethod(injectionMethod)
-                updateMethodLabel()
-            }
-            override fun onNothingSelected(parent: AdapterView<*>) {}
-        }
-
         radioGroup.setOnCheckedChangeListener { _, checkedId ->
             val mode = if (checkedId == R.id.radio_auto) "auto" else "manual"
             loaderPreferences.saveMode(mode)
@@ -237,28 +216,6 @@ class MainActivity : AppCompatActivity() {
         
         startCodmLoad()
         updateRootStatus()
-        updateMethodLabel()
-        injectMethodLabel.setOnClickListener { cycleInjectionMethod() }
-    }
-
-    private fun cycleInjectionMethod() {
-        val next = when (injectionMethod) {
-            "1" -> "2"
-            "2" -> "3"
-            else -> "1"
-        }
-        injectionMethod = next
-        loaderPreferences.saveInjectionMethod(next)
-        methodSpinner.setSelection(
-            when (next) {
-                "1" -> 0
-                "2" -> 1
-                else -> 2
-            }
-        )
-        updateMethodLabel()
-        userLog("method $next")
-        showToast("Method $next")
     }
 
     private fun userLog(message: String) {
@@ -293,18 +250,13 @@ class MainActivity : AppCompatActivity() {
         injectLogView.text = "—"
     }
 
-    private fun updateMethodLabel() {
-        injectMethodLabel.text = "method $injectionMethod"
-    }
-    
     private fun setupDelaySpinner() {
         val delayOptions = arrayOf("NO DELAY", "1S DELAY", "2S DELAY", "3S DELAY", "4S DELAY", "5S DELAY")
         delaySpinner.adapter = SimpleSpinnerAdapter(this, delayOptions)
     }
     
     private fun setupMethodSpinner() {
-        val methodOptions = arrayOf("METHOD 1", "METHOD 2", "METHOD 3")
-        methodSpinner.adapter = SimpleSpinnerAdapter(this, methodOptions)
+        methodSpinner.adapter = SimpleSpinnerAdapter(this, arrayOf("METHOD 1"))
     }
     
     private fun applyLibrarySelection(position: Int) {
@@ -694,7 +646,6 @@ class MainActivity : AppCompatActivity() {
         setLibraryChip("load")
         libraryDownloadStatus.text = "downloading module…"
         setDownloadProgressUi(0, showBar = true)
-        featureCacheLabel.text = "fetching…"
         loginButton.isEnabled = false
         librarySpinner.isEnabled = false
         delaySpinner.isEnabled = false
@@ -742,6 +693,7 @@ class MainActivity : AppCompatActivity() {
             loginButton.text = "INJECT"
         } else {
             libraryDownloadStatus.text = "fetching module…"
+            setDownloadProgressUi(0, showBar = true)
             beginLibraryLoad()
         }
     }
@@ -756,7 +708,6 @@ class MainActivity : AppCompatActivity() {
         libraryDownloadStatus.text = "module ready — stored locally"
         setDownloadProgressUi(100, showBar = false)
         findViewById<TextView>(R.id.library_package).text = "$payloadFileName · ${kb}kb"
-        featureCacheLabel.text = "cached · ${kb}kb"
         setLibraryChip("ready")
     }
 
@@ -851,30 +802,17 @@ class MainActivity : AppCompatActivity() {
         val injectLibrary = libraryForInjection()
         val gamePackage = DEFAULT_GAME_PACKAGE
         clearInjectLog()
-        userLog("inject start")
-        if (radioAuto.isChecked) {
-            launchGame(gamePackage)
-            lifecycleScope.launch {
-                delay(1000)
-                delay(delaySeconds * 1000L)
-                runInjectPipeline(
-                    libraryFile = outputFile,
-                    cacheDirectory = cacheDirectory,
-                    libraryFileName = libraryFileName,
-                    gamePackage = gamePackage,
-                    library = injectLibrary
-                )
-            }
-        } else {
-            lifecycleScope.launch {
-                runInjectPipeline(
-                    libraryFile = outputFile,
-                    cacheDirectory = cacheDirectory,
-                    libraryFileName = libraryFileName,
-                    gamePackage = gamePackage,
-                    library = injectLibrary
-                )
-            }
+        userLog("inject…")
+        loginButton.text = "…"
+        lifecycleScope.launch {
+            if (delaySeconds > 0) delay(delaySeconds * 1000L)
+            runInjectPipeline(
+                libraryFile = outputFile,
+                cacheDirectory = cacheDirectory,
+                libraryFileName = libraryFileName,
+                gamePackage = gamePackage,
+                library = injectLibrary
+            )
         }
     }
 
@@ -886,20 +824,12 @@ class MainActivity : AppCompatActivity() {
         library: SelectedLibrary
     ) {
         val gspace = withContext(Dispatchers.IO) { MlbbInjectStaging.detectGspaceFromProc() }
-        userLog("find CODM…")
-        var unity: ProcessFinder.Target? = null
-        waitLoop@ for (attempt in 0 until 90) {
-            unity = withContext(Dispatchers.IO) { ProcessFinder.findCodm() }
-            if (unity != null) break@waitLoop
-            if (attempt % 8 == 0) userLog("waiting game…")
-            delay(500)
-        }
-
-        val targetUnity = unity
+        userLog("waiting…")
+        val targetUnity = ensureCodmRunning(gamePackage, maxAttempts = 120)
         if (targetUnity == null) {
-            userLog("game not found")
+            userLog("no game")
             withContext(Dispatchers.Main) {
-                showToast("Open CODM first")
+                showToast("Install CODM")
                 finishInjectUi(success = false)
             }
             return
@@ -966,6 +896,7 @@ class MainActivity : AppCompatActivity() {
                 loaded -> {
                     userLog("done")
                     showToast("Inject OK")
+                    launchGame(gamePackage)
                     loginButton.text = "RE-INJECT"
                 }
                 lastExit != 0 -> {
@@ -987,10 +918,47 @@ class MainActivity : AppCompatActivity() {
         loginButton.isEnabled = true
         radioGroup.isEnabled = true
         delaySpinner.isEnabled = true
-        methodSpinner.isEnabled = true
         if (!success) {
-            updateMethodLabel()
+            loginButton.text = "RETRY"
         }
+    }
+
+    private suspend fun ensureCodmRunning(
+        gamePackage: String,
+        maxAttempts: Int
+    ): ProcessFinder.Target? {
+        for (attempt in 0 until maxAttempts) {
+            val found = withContext(Dispatchers.IO) { ProcessFinder.findCodm() }
+            if (found != null) {
+                userLog("game ok")
+                return found
+            }
+            if (attempt == 0 || attempt % 6 == 0) {
+                withContext(Dispatchers.Main) {
+                    val launched = launchGame(gamePackage)
+                    if (!launched) {
+                        userLog("not installed")
+                    } else {
+                        userLog("open game…")
+                        bringAccelToFront()
+                    }
+                }
+            }
+            if (attempt % 10 == 0 && attempt > 0) {
+                userLog("waiting…")
+            }
+            delay(500)
+        }
+        return null
+    }
+
+    private fun bringAccelToFront() {
+        Handler(Looper.getMainLooper()).postDelayed({
+            val intent = Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            }
+            startActivity(intent)
+        }, 350)
     }
 
     private fun proc_alive(pid: Int): Boolean {

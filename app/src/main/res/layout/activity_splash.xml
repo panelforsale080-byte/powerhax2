@@ -37,21 +37,12 @@
             android:textColor="@color/loader_text_muted"
             android:textSize="10sp" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:gravity="center"
-            android:text="initializing…"
-            android:textColor="@color/loader_text_secondary"
-            android:textSize="10sp" />
-
         <ProgressBar
             android:id="@+id/progressBarSplash"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
             android:layout_height="8dp"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="18dp"
             android:indeterminate="false"
             android:max="100"
             android:progress="0"

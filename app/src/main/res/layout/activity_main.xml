@@ -59,7 +59,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Owner Xorel · CODM loader"
+                        android:text="Owner Xorel"
                         android:textColor="@color/loader_text_muted"
                         android:textSize="10sp" />
                 </LinearLayout>
@@ -78,185 +78,6 @@
                     android:textColor="@color/loader_text_secondary"
                     android:textSize="7sp" />
             </LinearLayout>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:fontFamily="@font/pixel"
-                android:text="quick panel"
-                android:textColor="@color/loader_text_muted"
-                android:textSize="7sp" />
-
-            <GridLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:columnCount="2"
-                android:rowCount="2"
-                android:useDefaultMargins="true">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:layout_marginEnd="4dp"
-                    android:background="@drawable/feature_tile"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="10dp">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_secure"
-                        app:tint="@color/loader_feature_icon" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/pixel"
-                            android:text="shield"
-                            android:textColor="@color/loader_text_muted"
-                            android:textSize="6sp" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="native inject"
-                            android:textColor="@color/loader_text_primary"
-                            android:textSize="10sp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:layout_marginStart="4dp"
-                    android:background="@drawable/feature_tile"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="10dp">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_fast"
-                        app:tint="@color/loader_feature_icon" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/pixel"
-                            android:text="cache"
-                            android:textColor="@color/loader_text_muted"
-                            android:textSize="6sp" />
-
-                        <TextView
-                            android:id="@+id/feature_cache_label"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="smart save"
-                            android:textColor="@color/loader_text_primary"
-                            android:textSize="10sp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:layout_marginEnd="4dp"
-                    android:background="@drawable/feature_tile"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="10dp">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_package"
-                        app:tint="@color/loader_feature_icon" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/pixel"
-                            android:text="target"
-                            android:textColor="@color/loader_text_muted"
-                            android:textSize="6sp" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="CODM detect"
-                            android:textColor="@color/loader_text_primary"
-                            android:textSize="10sp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:layout_marginStart="4dp"
-                    android:background="@drawable/feature_tile"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="10dp">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_support"
-                        app:tint="@color/loader_feature_icon" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/pixel"
-                            android:text="support"
-                            android:textColor="@color/loader_text_muted"
-                            android:textSize="6sp" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@axcelLOki"
-                            android:textColor="@color/loader_text_primary"
-                            android:textSize="10sp" />
-                    </LinearLayout>
-                </LinearLayout>
-            </GridLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -431,62 +252,25 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:background="@drawable/feature_tile"
+                    android:orientation="vertical"
+                    android:padding="8dp">
 
-                    <LinearLayout
-                        android:layout_width="0dp"
+                    <TextView
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:background="@drawable/feature_tile"
-                        android:orientation="vertical"
-                        android:padding="8dp">
+                        android:fontFamily="@font/pixel"
+                        android:text="delay"
+                        android:textColor="@color/loader_text_muted"
+                        android:textSize="6sp" />
 
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/pixel"
-                            android:text="delay"
-                            android:textColor="@color/loader_text_muted"
-                            android:textSize="6sp" />
-
-                        <Spinner
-                            android:id="@+id/delay_spinner"
-                            android:layout_width="match_parent"
-                            android:layout_height="36dp"
-                            android:layout_marginTop="2dp"
-                            android:background="@android:color/transparent"
-                            android:popupBackground="@color/loader_surface_alt" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="8dp"
-                        android:layout_height="1dp" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:background="@drawable/feature_tile"
-                        android:orientation="vertical"
-                        android:padding="8dp">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/pixel"
-                            android:text="method"
-                            android:textColor="@color/loader_text_muted"
-                            android:textSize="6sp" />
-
-                        <Spinner
-                            android:id="@+id/method_spinner"
-                            android:layout_width="match_parent"
-                            android:layout_height="36dp"
-                            android:layout_marginTop="2dp"
-                            android:background="@android:color/transparent"
-                            android:popupBackground="@color/loader_surface_alt" />
-                    </LinearLayout>
+                    <Spinner
+                        android:id="@+id/delay_spinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="36dp"
+                        android:layout_marginTop="2dp"
+                        android:background="@android:color/transparent"
+                        android:popupBackground="@color/loader_surface_alt" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -514,33 +298,6 @@
                         android:text="checking…"
                         android:textColor="@color/loader_text_secondary"
                         android:textSize="10sp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/feature_tile"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="10dp">
-
-                    <TextView
-                        android:id="@+id/inject_method_label"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:fontFamily="@font/pixel"
-                        android:text="method 1"
-                        android:textColor="@color/loader_text_muted"
-                        android:textSize="7sp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="tap to cycle"
-                        android:textColor="@color/loader_text_muted"
-                        android:textSize="9sp" />
                 </LinearLayout>
 
                 <TextView
@@ -596,6 +353,12 @@
 
             <Spinner
                 android:id="@+id/my_spinner"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+
+            <Spinner
+                android:id="@+id/method_spinner"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:visibility="gone" />
