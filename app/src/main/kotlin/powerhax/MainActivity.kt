@@ -559,10 +559,7 @@ class MainActivity : AppCompatActivity() {
                 val nameTextView = view!!.findViewById<TextView>(R.id.spinnerText)
                 val logoImageView = view.findViewById<ImageView>(R.id.logoImage)
                 nameTextView.text = " ${nameList[position]}"
-                val logoUrl = logoList[position]
-                Glide.with(this@MainActivity)
-                    .load(logoUrl)
-                    .into(logoImageView)
+                logoImageView.setImageResource(R.drawable.accel_mark)
 
                 return view
             }
@@ -634,15 +631,7 @@ class MainActivity : AppCompatActivity() {
             loginButton.text = if (isLoadingLibrary) "…" else "LOAD"
             beginLibraryLoad()
         }
-        val logoUrl = jsonObject.optString("LOGO")
-        if (logoUrl.isNotBlank()) {
-            Glide.with(this)
-                .load(logoUrl)
-                .placeholder(R.drawable.circle)
-                .error(R.drawable.circle)
-                .into(appBanner)
-        }
-        
+        appBanner.setImageResource(R.drawable.accel_mark)
         refreshLibraryDrawer()
     }
     
