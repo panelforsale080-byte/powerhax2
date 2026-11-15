@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
