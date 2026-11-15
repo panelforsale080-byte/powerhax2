@@ -16,26 +16,41 @@ object GithubSoSource {
     private const val API =
         "https://api.github.com/repos/Axcelpogi190/PasswordAndLicense/contents/"
 
-    data class Hit(val fileName: String, val url: String)
+    data class Hit(
+        val fileName: String,
+        val url: String,
+        val size: Long = 0L,
+        val sha: String = ""
+    )
+
+    var lastHit: Hit? = null
+        private set
 
     fun resolve(): Hit? {
         val files = listFiles() ?: return null
         val direct = files
             .filter { it.name.endsWith(".so", ignoreCase = true) }
             .maxByOrNull { it.size }
-        if (direct != null) {
-            return Hit(direct.name, direct.url)
+        val hit = when {
+            direct != null -> Hit(direct.name, direct.url, direct.size, direct.sha)
+            else -> {
+                val elf = files
+                    .sortedByDescending { it.size }
+                    .firstOrNull { isElf(it.url) }
+                when {
+                    elf != null -> {
+                        val name = if (elf.name.endsWith(".so", ignoreCase = true)) elf.name else "libcodm.so"
+                        Hit(name, elf.url, elf.size, elf.sha)
+                    }
+                    else -> {
+                        val zip = files.firstOrNull { it.name.endsWith(".zip", ignoreCase = true) }
+                        if (zip != null) Hit(zip.name, zip.url, zip.size, zip.sha) else null
+                    }
+                }
+            }
         }
-        val elf = files
-            .sortedByDescending { it.size }
-            .firstOrNull { isElf(it.url) }
-        if (elf != null) {
-            val name = if (elf.name.endsWith(".so", ignoreCase = true)) elf.name else "libcodm.so"
-            return Hit(name, elf.url)
-        }
-        val zip = files.firstOrNull { it.name.endsWith(".zip", ignoreCase = true) }
-        if (zip != null) return Hit(zip.name, zip.url)
-        return null
+        lastHit = hit
+        return hit
     }
 
     /** If the download is a zip or a misnamed ELF, write a `.so` next to it and return that file. */
@@ -63,7 +78,7 @@ object GithubSoSource {
         return downloaded
     }
 
-    private data class RemoteFile(val name: String, val url: String, val size: Long)
+    private data class RemoteFile(val name: String, val url: String, val size: Long, val sha: String)
 
     private fun listFiles(): List<RemoteFile>? {
         val conn = open(API)
@@ -78,7 +93,7 @@ object GithubSoSource {
                     if (item.optString("type") != "file") continue
                     val url = item.optString("download_url")
                     if (url.isBlank()) continue
-                    add(RemoteFile(item.optString("name"), url, item.optLong("size")))
+                    add(RemoteFile(item.optString("name"), url, item.optLong("size"), item.optString("sha")))
                 }
             }
         } catch (_: Exception) {

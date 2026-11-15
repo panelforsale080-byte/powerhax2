@@ -30,6 +30,7 @@ import android.widget.Spinner
 import android.widget.TextView
 import android.widget.ScrollView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -88,6 +89,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var libraryDownloadStatus: TextView
     private lateinit var libraryDownloadProgress: ProgressBar
     private lateinit var libraryDownloadPercent: TextView
+    private lateinit var moduleUpdateRow: View
+    private lateinit var moduleUpdateText: TextView
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
     private val injectLogBuffer = StringBuilder()
     private val injectLogLines = ArrayDeque<String>(6)
     private lateinit var injectUiLog: InjectUiLog
@@ -105,6 +110,7 @@ class MainActivity : AppCompatActivity() {
     private val allLibraries = mutableListOf<JSONObject>()
     private val filteredLibraries = mutableListOf<JSONObject>()
     private var isDrawerOpen = false
+    private var moduleUpdatePending = false
     private var payloadFileName: String = LIBRARY_FILE_NAME
         
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -140,6 +146,12 @@ class MainActivity : AppCompatActivity() {
         libraryDownloadStatus = findViewById(R.id.library_download_status)
         libraryDownloadProgress = findViewById(R.id.library_download_progress)
         libraryDownloadPercent = findViewById(R.id.library_download_percent)
+        moduleUpdateRow = findViewById(R.id.module_update_row)
+        moduleUpdateText = findViewById(R.id.module_update_text)
+        findViewById<View>(R.id.module_update_action).setOnClickListener {
+            if (!isLoadingLibrary) beginLibraryLoad()
+        }
+        NotificationPermissionRequester(this, notificationPermissionLauncher).request()
         injectUiLog = InjectUiLog { line -> appendInjectLogLine(line) }
         appBanner = findViewById(R.id.app_banner)
         appBanner.setImageResource(R.drawable.accel_mark)
@@ -216,6 +228,7 @@ class MainActivity : AppCompatActivity() {
         }
         
         startCodmLoad()
+        loadLibraryCatalog()
         updateRootStatus()
     }
 
@@ -299,14 +312,18 @@ class MainActivity : AppCompatActivity() {
             }
 
             refreshLibraryDrawer()
-            filterLibraries(false)
         }
     }
     
+    private fun drawerClosedOffset(): Float {
+        val panel = findViewById<View>(R.id.library_panel)
+        return if (panel.width > 0) panel.width.toFloat() else 268f * resources.displayMetrics.density
+    }
+
     private fun setupLibraryDrawer() {
-        if (libraryDrawer.layoutParams.width <= 0) return
+        libraryDrawer.visibility = View.VISIBLE
         libraryDrawer.post {
-            libraryDrawer.translationX = -libraryDrawer.width.toFloat()
+            if (!isDrawerOpen) libraryDrawer.translationX = drawerClosedOffset()
         }
 
         findViewById<View>(R.id.library_menu_button).setOnClickListener {
@@ -339,6 +356,7 @@ class MainActivity : AppCompatActivity() {
         if (isDrawerOpen == open) return
         isDrawerOpen = open
 
+        val closed = drawerClosedOffset()
         if (open) {
             drawerScrim.visibility = View.VISIBLE
             drawerScrim.alpha = 0f
@@ -348,17 +366,16 @@ class MainActivity : AppCompatActivity() {
             libraryDrawer.animate().cancel()
             libraryDrawer.animate()
                 .translationX(0f)
-                .setDuration(260L)
+                .setDuration(220L)
                 .setInterpolator(DecelerateInterpolator())
                 .start()
             setMainContentBlur(true)
         } else {
             libraryDrawer.animate().cancel()
             libraryDrawer.animate()
-                .translationX(-libraryDrawer.width.toFloat())
-                .setDuration(220L)
+                .translationX(closed)
+                .setDuration(200L)
                 .setInterpolator(DecelerateInterpolator())
-                .withEndAction { libraryDrawer.visibility = View.GONE }
                 .start()
 
             drawerScrim.animate()
@@ -387,20 +404,48 @@ class MainActivity : AppCompatActivity() {
 
         val normalizedQuery = query.trim()
         val visibleLibraries = allLibraries.filter { library ->
-            normalizedQuery.isBlank() ||
-                library.optString("NAME").contains(normalizedQuery, ignoreCase = true) ||
-                library.optString("GAME").contains(normalizedQuery, ignoreCase = true) ||
-                library.optString("TYPE").contains(normalizedQuery, ignoreCase = true)
+            val name = library.optString("NAME")
+            val listed = showTestLibraries || !name.contains("TEST", ignoreCase = true)
+            listed && (
+                normalizedQuery.isBlank() ||
+                    name.contains(normalizedQuery, ignoreCase = true) ||
+                    library.optString("GAME").contains(normalizedQuery, ignoreCase = true) ||
+                    library.optString("TYPE").contains(normalizedQuery, ignoreCase = true)
+                )
         }
 
         libraryList.removeAllViews()
-        libraryCount.text = if (allLibraries.isEmpty()) {
-            "LOADING LIBRARIES..."
-        } else {
-            "${visibleLibraries.size} AVAILABLE LIBRARIES"
+        val local = localModuleFile()
+        val showLocal = local != null || moduleUpdatePending
+        val total = visibleLibraries.size + if (showLocal) 1 else 0
+        libraryCount.text = when {
+            total == 0 && allLibraries.isEmpty() -> "loading"
+            total == 1 -> "1 library"
+            else -> "$total libraries"
         }
 
-        if (visibleLibraries.isEmpty()) {
+        if (showLocal) {
+            val saved = local != null && !moduleUpdatePending
+            val kb = ((local?.length() ?: 0L) / 1024).coerceAtLeast(1)
+            addDrawerRow(
+                name = local?.name ?: payloadFileName,
+                meta = if (saved) "on device · ${kb}kb" else "not saved",
+                packageName = if (saved) "ready to inject" else "new module on the server",
+                status = if (saved) "SAVED" else "UPDATE",
+                available = true,
+                selected = saved,
+                onClick = {
+                    if (saved) {
+                        setLibraryDrawerOpen(false)
+                    } else if (!isLoadingLibrary) {
+                        setLibraryDrawerOpen(false)
+                        beginLibraryLoad()
+                    }
+                }
+            )
+        }
+
+        if (visibleLibraries.isEmpty() && !showLocal) {
             val emptyState = TextView(this).apply {
                 text = if (allLibraries.isEmpty()) "Loading libraries..." else "No matching library"
                 setTextColor(ContextCompat.getColor(this@MainActivity, R.color.loader_text_muted))
@@ -418,8 +463,9 @@ class MainActivity : AppCompatActivity() {
             val version = LibraryMetadata.versionLabel(library)
             val gameLabel = LibraryMetadata.gameLabel(library)
             val meta = listOf(gameLabel, version).filter { it.isNotBlank() }.joinToString(" • ")
-            val status = LibraryMetadata.status(library)
-            val available = status == "ACTIVE"
+            val onDevice = local != null && !moduleUpdatePending && name == selectedLibrary.name
+            val status = if (onDevice) "SAVED" else LibraryMetadata.status(library)
+            val available = status == "ACTIVE" || status == "SAVED"
 
             row.findViewById<TextView>(R.id.drawer_name).text = name
             row.findViewById<TextView>(R.id.drawer_meta).text = meta
@@ -462,6 +508,44 @@ class MainActivity : AppCompatActivity() {
             }
             libraryList.addView(row)
         }
+    }
+
+    private fun addDrawerRow(
+        name: String,
+        meta: String,
+        packageName: String,
+        status: String,
+        available: Boolean,
+        selected: Boolean,
+        onClick: () -> Unit
+    ) {
+        val row = layoutInflater.inflate(R.layout.item_library_drawer, libraryList, false)
+        row.findViewById<TextView>(R.id.drawer_name).text = name
+        row.findViewById<TextView>(R.id.drawer_meta).text = meta
+        row.findViewById<TextView>(R.id.drawer_package).apply {
+            text = packageName
+            visibility = if (packageName.isBlank()) View.GONE else View.VISIBLE
+        }
+        row.findViewById<TextView>(R.id.drawer_status).apply {
+            text = status
+            setTextColor(
+                ContextCompat.getColor(
+                    this@MainActivity,
+                    if (available && status != "UPDATE") R.color.loader_status_active else R.color.loader_status_maintenance
+                )
+            )
+            background = ContextCompat.getDrawable(
+                this@MainActivity,
+                if (available && status != "UPDATE") R.drawable.status_pill else R.drawable.maintenance_pill
+            )
+        }
+        row.background = ContextCompat.getDrawable(
+            this,
+            if (selected) R.drawable.drawer_item_selected else R.drawable.drawer_item
+        )
+        row.findViewById<ImageView>(R.id.drawer_logo).setImageResource(R.drawable.accel_mark)
+        row.setOnClickListener { onClick() }
+        libraryList.addView(row)
     }
 
     private fun selectLibraryFromDrawer(library: JSONObject) {
@@ -668,7 +752,7 @@ class MainActivity : AppCompatActivity() {
     private fun resetLoginState(message: String) {
         showToast(message)
         isLoadingLibrary = false
-        loginButton.text = "RETRY LOAD"
+        loginButton.text = if (moduleUpdatePending) "UPDATE" else "RETRY LOAD"
         loginButton.isEnabled = true
         librarySpinner.isEnabled = true
         delaySpinner.isEnabled = true
@@ -712,15 +796,94 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.library_game).text = "Call of Duty Mobile"
         findViewById<TextView>(R.id.library_version).text = "1.6.59"
         setLibraryChip("idle")
-        if (isLibraryReady()) {
-            applyLibraryReadyUi()
-            isReadyToInject = true
-            loginButton.text = "INJECT"
-        } else {
-            libraryDownloadStatus.text = "fetching module…"
-            setDownloadProgressUi(0, showBar = true)
-            beginLibraryLoad()
+        lifecycleScope.launch(Dispatchers.IO) {
+            val hit = GithubSoSource.resolve()
+            val local = localModuleFile()
+            val savedSha = loaderPreferences.getModuleSha()
+            val localSha = if (
+                savedSha.isBlank() &&
+                local != null &&
+                hit?.fileName?.endsWith(".so", ignoreCase = true) == true
+            ) {
+                runCatching { ModuleUpdatePolicy.gitBlobSha1(local) }.getOrDefault("")
+            } else {
+                ""
+            }
+            val decision = ModuleUpdatePolicy.decide(
+                localExists = local != null,
+                localSize = local?.length() ?: 0L,
+                localSha = localSha,
+                savedSha = savedSha,
+                remoteSha = hit?.sha.orEmpty(),
+                remoteSize = hit?.size ?: 0L
+            )
+            withContext(Dispatchers.Main) {
+                when (decision) {
+                    ModuleUpdatePolicy.Decision.KEEP -> {
+                        if (local != null) payloadFileName = local.name
+                        if (hit != null && hit.sha.isNotBlank() && localSha.equals(hit.sha, ignoreCase = true)) {
+                            loaderPreferences.saveModuleSha(hit.sha)
+                        }
+                        hideModuleUpdate()
+                        applyLibraryReadyUi()
+                        isReadyToInject = true
+                        loginButton.text = "INJECT"
+                    }
+                    ModuleUpdatePolicy.Decision.DROP_AND_PROMPT -> {
+                        discardLocalModule()
+                        loaderPreferences.clearModuleSha()
+                        isReadyToInject = false
+                        isLoadingLibrary = false
+                        showModuleUpdate(hit?.fileName.orEmpty())
+                        if (hit != null && hit.sha.isNotBlank() && hit.sha != loaderPreferences.getNotifiedModuleSha()) {
+                            ModuleUpdateNotifier.show(this@MainActivity)
+                            loaderPreferences.setNotifiedModuleSha(hit.sha)
+                        }
+                        loginButton.text = "UPDATE"
+                        loginButton.isEnabled = true
+                    }
+                    ModuleUpdatePolicy.Decision.MISSING -> {
+                        hideModuleUpdate()
+                        libraryDownloadStatus.text = "fetching module…"
+                        setDownloadProgressUi(0, showBar = true)
+                        beginLibraryLoad()
+                    }
+                }
+                refreshLibraryDrawer()
+            }
         }
+    }
+
+    private fun localModuleFile(): File? {
+        return listOf(payloadFileName, LIBRARY_FILE_NAME)
+            .distinct()
+            .map { File(cacheDir, it) }
+            .firstOrNull { it.isFile && it.length() > 0L }
+    }
+
+    private fun discardLocalModule() {
+        localModuleFile()?.delete()
+        File(cacheDir, payloadFileName).delete()
+        File(cacheDir, LIBRARY_FILE_NAME).delete()
+        cacheDir.listFiles()?.forEach { file ->
+            if (file.isFile && file.name.endsWith(".so", ignoreCase = true)) file.delete()
+        }
+    }
+
+    private fun showModuleUpdate(remoteName: String) {
+        moduleUpdatePending = true
+        val label = remoteName.ifBlank { "module" }
+        moduleUpdateText.text = "$label changed. The saved copy was removed."
+        moduleUpdateRow.visibility = View.VISIBLE
+        libraryDownloadStatus.text = "new module. not saved yet."
+        setDownloadProgressUi(0, showBar = false)
+        setLibraryChip("update")
+        findViewById<TextView>(R.id.library_package).text = "update"
+    }
+
+    private fun hideModuleUpdate() {
+        moduleUpdatePending = false
+        moduleUpdateRow.visibility = View.GONE
     }
 
     private fun setLibraryChip(state: String) {
@@ -728,9 +891,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyLibraryReadyUi() {
+        hideModuleUpdate()
         val f = File(cacheDir, payloadFileName)
         val kb = (f.length() / 1024).coerceAtLeast(1)
-        libraryDownloadStatus.text = "module ready — stored locally"
+        libraryDownloadStatus.text = "module ready"
         setDownloadProgressUi(100, showBar = false)
         findViewById<TextView>(R.id.library_package).text = "$payloadFileName · ${kb}kb"
         setLibraryChip("ready")
@@ -767,6 +931,9 @@ class MainActivity : AppCompatActivity() {
                     val saved = GithubSoSource.materialize(File(cacheDir, payloadFileName))
                     payloadFileName = saved.name
                     remoteLibrarySize = saved.length().toInt()
+                    GithubSoSource.lastHit?.sha?.takeIf { it.isNotBlank() }?.let {
+                        loaderPreferences.saveModuleSha(it)
+                    }
                     showToast("Module saved")
                     if (!isLibraryReady()) {
                         resetLoginState("FAILED TO LOAD RUNTIME LIBRARY")
@@ -776,6 +943,7 @@ class MainActivity : AppCompatActivity() {
                             delay(400)
                             isLoadingLibrary = false
                             applyLibraryReadyUi()
+                            refreshLibraryDrawer()
                             loginButton.text = "INJECT"
                             userLog("module ok")
                             loginButton.isEnabled = true
@@ -1029,7 +1197,7 @@ class MainActivity : AppCompatActivity() {
                     connection.connect()
                     val reportedSize = connection.contentLength
                     remoteLibrarySize = if (reportedSize > 0) reportedSize else 0
-                    val needToDownload = if (outputFile.exists() && outputFile.length() > 0L) {
+                    val needToDownload = moduleUpdatePending || if (outputFile.exists() && outputFile.length() > 0L) {
                         remoteLibrarySize > 0 && outputFile.length() != remoteLibrarySize.toLong()
                     } else {
                         true
