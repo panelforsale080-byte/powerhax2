@@ -47,7 +47,7 @@ class AboutDialog(context: Context) : Dialog(context) {
             Detail(R.id.detail_developer, R.drawable.ic_user, "Developer", "PowerHAX"),
             Detail(R.id.detail_username, R.drawable.ic_about, "Username", "@PowerHaxxxx"),
             Detail(R.id.detail_channel, R.drawable.ic_telegram, "Channel", "t.me/power_haxx"),
-            Detail(R.id.detail_version, R.drawable.ic_package, "App Version", "1.6.57")
+            Detail(R.id.detail_version, R.drawable.ic_package, "App Version", "1.0")
         )
 
         details.forEach { detail ->
