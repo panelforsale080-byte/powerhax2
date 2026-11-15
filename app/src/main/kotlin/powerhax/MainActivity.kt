@@ -108,6 +108,8 @@ class MainActivity : AppCompatActivity() {
     private var injectionMethod: String = "1"
     private var showTestLibraries = false
     private val allLibraries = mutableListOf<JSONObject>()
+    private var githubLibraries: List<GithubSoSource.Hit> = emptyList()
+    private var githubListed = false
     private val filteredLibraries = mutableListOf<JSONObject>()
     private var isDrawerOpen = false
     private var moduleUpdatePending = false
@@ -300,18 +302,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            runCatching {
-                val dataArray = root.getJSONArray("DATA")
-                allLibraries.clear()
-                for (i in 0 until dataArray.length()) {
-                    allLibraries.add(dataArray.getJSONObject(i))
-                }
-            }.onFailure { _ ->
-                Toast.makeText(this@MainActivity, "Failed to load servers data", Toast.LENGTH_SHORT).show()
-                return@launch
-            }
-
-            refreshLibraryDrawer()
         }
     }
     
@@ -403,51 +393,22 @@ class MainActivity : AppCompatActivity() {
         if (!::libraryList.isInitialized) return
 
         val normalizedQuery = query.trim()
-        val visibleLibraries = allLibraries.filter { library ->
-            val name = library.optString("NAME")
-            val listed = showTestLibraries || !name.contains("TEST", ignoreCase = true)
-            listed && (
-                normalizedQuery.isBlank() ||
-                    name.contains(normalizedQuery, ignoreCase = true) ||
-                    library.optString("GAME").contains(normalizedQuery, ignoreCase = true) ||
-                    library.optString("TYPE").contains(normalizedQuery, ignoreCase = true)
-                )
+        val visibleLibraries = githubLibraries.filter { hit ->
+            normalizedQuery.isBlank() || hit.fileName.contains(normalizedQuery, ignoreCase = true)
         }
 
         libraryList.removeAllViews()
         val local = localModuleFile()
-        val showLocal = local != null || moduleUpdatePending
-        val total = visibleLibraries.size + if (showLocal) 1 else 0
+        val savedSha = loaderPreferences.getModuleSha()
         libraryCount.text = when {
-            total == 0 && allLibraries.isEmpty() -> "loading"
-            total == 1 -> "1 library"
-            else -> "$total libraries"
+            !githubListed -> "loading"
+            visibleLibraries.size == 1 -> "1 library"
+            else -> "${visibleLibraries.size} libraries"
         }
 
-        if (showLocal) {
-            val saved = local != null && !moduleUpdatePending
-            val kb = ((local?.length() ?: 0L) / 1024).coerceAtLeast(1)
-            addDrawerRow(
-                name = local?.name ?: payloadFileName,
-                meta = if (saved) "on device · ${kb}kb" else "not saved",
-                packageName = if (saved) "ready to inject" else "new module on the server",
-                status = if (saved) "SAVED" else "UPDATE",
-                available = true,
-                selected = saved,
-                onClick = {
-                    if (saved) {
-                        setLibraryDrawerOpen(false)
-                    } else if (!isLoadingLibrary) {
-                        setLibraryDrawerOpen(false)
-                        beginLibraryLoad()
-                    }
-                }
-            )
-        }
-
-        if (visibleLibraries.isEmpty() && !showLocal) {
+        if (visibleLibraries.isEmpty()) {
             val emptyState = TextView(this).apply {
-                text = if (allLibraries.isEmpty()) "Loading libraries..." else "No matching library"
+                text = if (!githubListed) "Checking GitHub..." else "No CODM module on GitHub"
                 setTextColor(ContextCompat.getColor(this@MainActivity, R.color.loader_text_muted))
                 textSize = 11f
                 setPadding(12, 18, 12, 18)
@@ -456,57 +417,29 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        visibleLibraries.forEach { library ->
-            val row = layoutInflater.inflate(R.layout.item_library_drawer, libraryList, false)
-            val name = library.optString("NAME").trim().ifBlank { "Unnamed library" }
-            val packageName = library.optString("GAME").trim()
-            val version = LibraryMetadata.versionLabel(library)
-            val gameLabel = LibraryMetadata.gameLabel(library)
-            val meta = listOf(gameLabel, version).filter { it.isNotBlank() }.joinToString(" • ")
-            val onDevice = local != null && !moduleUpdatePending && name == selectedLibrary.name
-            val status = if (onDevice) "SAVED" else LibraryMetadata.status(library)
-            val available = status == "ACTIVE" || status == "SAVED"
-
-            row.findViewById<TextView>(R.id.drawer_name).text = name
-            row.findViewById<TextView>(R.id.drawer_meta).text = meta
-            row.findViewById<TextView>(R.id.drawer_package).apply {
-                text = packageName
-                visibility = if (packageName.isBlank()) View.GONE else View.VISIBLE
-            }
-            row.findViewById<TextView>(R.id.drawer_status).apply {
-                text = status
-                setTextColor(
-                    ContextCompat.getColor(
-                        this@MainActivity,
-                        if (available) R.color.loader_status_active else R.color.loader_status_maintenance
-                    )
+        visibleLibraries.forEach { hit ->
+            val saved = local != null && !moduleUpdatePending && (
+                local.name.equals(hit.fileName, ignoreCase = true) ||
+                    (savedSha.isNotBlank() && savedSha.equals(hit.sha, ignoreCase = true))
                 )
-                background = ContextCompat.getDrawable(
-                    this@MainActivity,
-                    if (available) R.drawable.status_pill else R.drawable.maintenance_pill
-                )
+            val kb = (if (hit.size > 0) hit.size else local?.length() ?: 0L) / 1024
+            val status = when {
+                moduleUpdatePending -> "UPDATE"
+                saved -> "SAVED"
+                else -> "GITHUB"
             }
-            row.background = ContextCompat.getDrawable(
-                this,
-                if (available && name == selectedLibrary.name) {
-                    R.drawable.drawer_item_selected
-                } else {
-                    R.drawable.drawer_item
+            addDrawerRow(
+                name = hit.fileName,
+                meta = "CODM · ${kb.coerceAtLeast(1)}kb",
+                packageName = "Call of Duty Mobile",
+                status = status,
+                available = true,
+                selected = saved,
+                onClick = {
+                    setLibraryDrawerOpen(false)
+                    if (!saved && !isLoadingLibrary) beginLibraryLoad()
                 }
             )
-            row.isEnabled = available
-            row.alpha = if (available) 1f else 0.58f
-
-            row.findViewById<ImageView>(R.id.drawer_logo).setImageResource(R.drawable.accel_mark)
-
-            row.setOnClickListener {
-                if (available) {
-                    selectLibraryFromDrawer(library)
-                } else {
-                    showToast("$name is under maintenance")
-                }
-            }
-            libraryList.addView(row)
         }
     }
 
@@ -797,7 +730,10 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.library_version).text = "1.6.59"
         setLibraryChip("idle")
         lifecycleScope.launch(Dispatchers.IO) {
-            val hit = GithubSoSource.resolve()
+            val payloads = GithubSoSource.listPayloads()
+            githubLibraries = payloads.orEmpty()
+            githubListed = true
+            val hit = payloads?.maxByOrNull { it.size }
             val local = localModuleFile()
             val savedSha = loaderPreferences.getModuleSha()
             val localSha = if (

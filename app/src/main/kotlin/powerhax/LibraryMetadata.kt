@@ -9,11 +9,10 @@ object LibraryMetadata {
         val packageName = library.optString("GAME").trim()
         val type = library.optString("TYPE").trim()
         return when {
-            packageName.contains("mobile.legends", ignoreCase = true) -> "Mobile Legends"
-            packageName.contains("codm", ignoreCase = true) -> "Mobile Legends"
+            packageName.contains("codm", ignoreCase = true) || type.contains("codm", ignoreCase = true) -> "Call of Duty Mobile"
             type.isNotBlank() -> type
             packageName.isNotBlank() -> packageName
-            else -> "Game unavailable"
+            else -> "Call of Duty Mobile"
         }
     }
 

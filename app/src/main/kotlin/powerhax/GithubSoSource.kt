@@ -26,31 +26,33 @@ object GithubSoSource {
     var lastHit: Hit? = null
         private set
 
-    fun resolve(): Hit? {
+    /** Every payload file actually stored in the GitHub repo. */
+    fun listPayloads(): List<Hit>? {
         val files = listFiles() ?: return null
-        val direct = files
+        val libraries = files
             .filter { it.name.endsWith(".so", ignoreCase = true) }
-            .maxByOrNull { it.size }
-        val hit = when {
-            direct != null -> Hit(direct.name, direct.url, direct.size, direct.sha)
-            else -> {
-                val elf = files
-                    .sortedByDescending { it.size }
-                    .firstOrNull { isElf(it.url) }
-                when {
-                    elf != null -> {
-                        val name = if (elf.name.endsWith(".so", ignoreCase = true)) elf.name else "libcodm.so"
-                        Hit(name, elf.url, elf.size, elf.sha)
-                    }
-                    else -> {
-                        val zip = files.firstOrNull { it.name.endsWith(".zip", ignoreCase = true) }
-                        if (zip != null) Hit(zip.name, zip.url, zip.size, zip.sha) else null
-                    }
-                }
-            }
+            .sortedByDescending { it.size }
+            .map { Hit(it.name, it.url, it.size, it.sha) }
+        val hits = if (libraries.isNotEmpty()) {
+            libraries
+        } else {
+            val elf = files.sortedByDescending { it.size }.firstOrNull { isElf(it.url) }
+            val zip = files.firstOrNull { it.name.endsWith(".zip", ignoreCase = true) }
+            listOfNotNull(
+                elf?.let {
+                    val name = if (it.name.endsWith(".so", ignoreCase = true)) it.name else "libcodm.so"
+                    Hit(name, it.url, it.size, it.sha)
+                },
+                if (elf == null && zip != null) Hit(zip.name, zip.url, zip.size, zip.sha) else null
+            )
         }
-        lastHit = hit
-        return hit
+        lastHit = hits.maxByOrNull { it.size }
+        return hits
+    }
+
+    fun resolve(): Hit? {
+        val listed = listPayloads() ?: return null
+        return listed.maxByOrNull { it.size }
     }
 
     /** If the download is a zip or a misnamed ELF, write a `.so` next to it and return that file. */
