@@ -53,7 +53,7 @@ object GithubSoSource {
                 val entry = zip.entries().asSequence().firstOrNull { item ->
                     !item.isDirectory && item.name.endsWith(".so", ignoreCase = true)
                 } ?: return downloaded
-                val dest = File(downloaded.parentFile, File(item.name).name)
+                val dest = File(downloaded.parentFile, File(entry.name).name)
                 zip.getInputStream(entry).use { input ->
                     dest.outputStream().use { output -> input.copyTo(output) }
                 }
