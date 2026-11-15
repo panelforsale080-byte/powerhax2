@@ -98,7 +98,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var injectUiLog: InjectUiLog
     
     private val commandRunner = CommandRunner()
-    private val catalogClient = LibraryCatalogClient(SERVER_LIST_URL) }
+    private val catalogClient = LibraryCatalogClient(SERVER_LIST_URL)
     private var isReadyToInject: Boolean = false
     private var isLoadingLibrary: Boolean = false
     private var remoteLibrarySize: Int = 0
