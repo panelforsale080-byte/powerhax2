@@ -11,7 +11,7 @@ android {
         applicationId = "com.accel.loader"
         minSdk = 28
         targetSdk = 35
-        versionCode = 1
+        versionCode = 2
         versionName = "1.0"
         externalNativeBuild {
             cmake {
@@ -36,15 +36,22 @@ android {
         jvmTarget = "17"
     }
 
+    signingConfigs {
+        create("official") {
+            storeFile = file("release.p12")
+            storePassword = "accel-official"
+            keyAlias = "accel"
+            keyPassword = "accel-official"
+            storeType = "PKCS12"
+        }
+    }
+
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            versionNameSuffix = "-release"
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            isMinifyEnabled = false
+            isShrinkResources = false
+            isDebuggable = false
+            signingConfig = signingConfigs.getByName("official")
         }
         getByName("debug") {
             isDebuggable = true
@@ -69,7 +76,6 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.7.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.9.0")
-    implementation("com.github.bumptech.glide:glide:4.12.0")
 
     testImplementation("junit:junit:4.13.2")
 }

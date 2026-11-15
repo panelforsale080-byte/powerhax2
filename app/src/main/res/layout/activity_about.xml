@@ -61,7 +61,7 @@
                 android:background="@drawable/circle"
                 android:contentDescription="Astral logo"
                 android:scaleType="centerCrop"
-                android:src="@drawable/astral_logo" />
+                android:src="@drawable/app_logo" />
 
             <TextView
                 android:layout_width="wrap_content"

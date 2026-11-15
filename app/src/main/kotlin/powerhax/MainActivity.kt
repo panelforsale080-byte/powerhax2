@@ -98,8 +98,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var injectUiLog: InjectUiLog
     
     private val commandRunner = CommandRunner()
-    private val catalogClient = LibraryCatalogClient(SERVER_LIST_URL)
-    private val assetExtractor by lazy { AssetExtractor(assets, cacheDir) }
+    private val catalogClient = LibraryCatalogClient(SERVER_LIST_URL) }
     private var isReadyToInject: Boolean = false
     private var isLoadingLibrary: Boolean = false
     private var remoteLibrarySize: Int = 0
@@ -157,7 +156,7 @@ class MainActivity : AppCompatActivity() {
         NotificationPermissionRequester(this, notificationPermissionLauncher).request()
         injectUiLog = InjectUiLog { line -> appendInjectLogLine(line) }
         appBanner = findViewById(R.id.app_banner)
-        appBanner.setImageResource(R.drawable.accel_mark)
+        appBanner.setImageResource(R.drawable.app_logo)
         findViewById<TextView>(R.id.header_build).text =
             "v${packageManager.getPackageInfo(packageName, 0).versionName}"
         playEntrance()
@@ -475,7 +474,7 @@ class MainActivity : AppCompatActivity() {
             this,
             if (selected) R.drawable.drawer_item_selected else R.drawable.drawer_item
         )
-        row.findViewById<ImageView>(R.id.drawer_logo).setImageResource(R.drawable.accel_mark)
+        row.findViewById<ImageView>(R.id.drawer_logo).setImageResource(R.drawable.app_logo)
         row.setOnClickListener { onClick() }
         libraryList.addView(row)
     }
@@ -534,7 +533,7 @@ class MainActivity : AppCompatActivity() {
                 val nameTextView = view!!.findViewById<TextView>(R.id.spinnerText)
                 val logoImageView = view.findViewById<ImageView>(R.id.logoImage)
                 nameTextView.text = " ${nameList[position]}"
-                logoImageView.setImageResource(R.drawable.accel_mark)
+                logoImageView.setImageResource(R.drawable.app_logo)
 
                 return view
             }
@@ -606,7 +605,7 @@ class MainActivity : AppCompatActivity() {
             loginButton.text = if (isLoadingLibrary) "…" else "LOAD"
             beginLibraryLoad()
         }
-        appBanner.setImageResource(R.drawable.accel_mark)
+        appBanner.setImageResource(R.drawable.app_logo)
         refreshLibraryDrawer()
     }
     
@@ -951,7 +950,7 @@ class MainActivity : AppCompatActivity() {
         gamePackage: String,
         library: SelectedLibrary
     ) {
-        val gspace = withContext(Dispatchers.IO) { MlbbInjectStaging.detectGspaceFromProc() }
+        val gspace = withContext(Dispatchers.IO) { ProcessFinder.inVirtualSpace() }
         userLog("waiting…")
         val targetUnity = ensureCodmRunning(gamePackage, maxAttempts = 120)
         if (targetUnity == null) {

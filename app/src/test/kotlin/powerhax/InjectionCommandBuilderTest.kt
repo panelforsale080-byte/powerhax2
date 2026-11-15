@@ -31,14 +31,14 @@ class InjectionCommandBuilderTest {
 
     @Test
     fun gspacePrefersUnityCmdlineBeforePid() {
-        val unity = ProcessFinder.Target(29664, "com.mobile.legends:UnityKillsMe")
+        val unity = ProcessFinder.Target(29664, "com.garena.game.codm:UnityKillsMe")
         val attempts = InjectionCommandBuilder.injectTargetAttempts(
             unity = unity,
-            gamePackage = "com.mobile.legends",
+            gamePackage = "com.garena.game.codm",
             inGspace = true,
             preferredTarget = null
         )
-        assertEquals("com.mobile.legends:UnityKillsMe", attempts.first())
-        assertTrue(attempts.indexOf("29664") > attempts.indexOf("com.mobile.legends:UnityKillsMe"))
+        assertEquals("com.garena.game.codm:UnityKillsMe", attempts.first())
+        assertTrue(attempts.indexOf("29664") > attempts.indexOf("com.garena.game.codm:UnityKillsMe"))
     }
 }

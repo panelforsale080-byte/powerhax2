@@ -20,7 +20,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:contentDescription="Accel"
-            android:src="@mipmap/ic_launcher" />
+            android:src="@drawable/app_logo" />
 
         <TextView
             android:layout_width="wrap_content"

@@ -38,7 +38,7 @@
                     android:layout_width="52dp"
                     android:layout_height="52dp"
                     android:contentDescription="Accel"
-                    android:src="@drawable/accel_mark" />
+                    android:src="@drawable/app_logo" />
 
                 <LinearLayout
                     android:layout_width="0dp"

@@ -12,25 +12,6 @@ object ProcessFinder {
             get() = label.contains("UnityKills", ignoreCase = true)
     }
 
-    /** All MLBB-related processes (for on-screen debug). */
-    fun listMlbbCandidates(): List<Target> {
-        val out = mutableListOf<Target>()
-        scanProc { pid, cmdline ->
-            if (isMlbbRelated(cmdline)) {
-                out += Target(pid, cmdline.ifBlank { "pid=$pid" })
-            }
-        }
-        return out.sortedByDescending { processScore(it.label) }
-    }
-
-    fun listCodmCandidates(): List<Target> {
-        val out = mutableListOf<Target>()
-        scanProc { pid, cmdline ->
-            if (isCodm(cmdline)) out += Target(pid, cmdline.ifBlank { "pid=$pid" })
-        }
-        return out.sortedByDescending { codmScore(it.label) }
-    }
-
     /** CODM game process. Prefer the main package over :push / :sandboxed helpers. */
     fun findCodm(): Target? {
         var best: Target? = null
@@ -63,38 +44,17 @@ object ProcessFinder {
         return s
     }
 
-    /** Unity game process — menu must inject here, not the launcher/main APK process. */
-    fun findUnityKills(): Target? {
-        var best: Target? = null
-        var bestScore = Int.MIN_VALUE
-        scanProc { pid, cmdline ->
-            if (!cmdline.contains("UnityKills", ignoreCase = true)) return@scanProc
-            if (!isMlbbRelated(cmdline)) return@scanProc
-            val score = processScore(cmdline) + 200
-            if (score > bestScore) {
-                bestScore = score
-                best = Target(pid, cmdline)
+    fun inVirtualSpace(): Boolean {
+        return try {
+            File("/proc/self/maps").useLines { lines ->
+                lines.any {
+                    it.contains("com.gspace.android/virtual", ignoreCase = true) ||
+                        it.contains("/virtual/data/user/0/", ignoreCase = true)
+                }
             }
+        } catch (_: Exception) {
+            false
         }
-        best?.let { Log.i(TAG, "UnityKills target pid=${it.pid} cmdline=${it.label}") }
-        return best
-    }
-
-    fun findMlbb(): Target? = findUnityKills() ?: findMainMlbb()
-
-    private fun findMainMlbb(): Target? {
-        var best: Target? = null
-        var bestScore = Int.MIN_VALUE
-        scanProc { pid, cmdline ->
-            if (!isMlbbRelated(cmdline)) return@scanProc
-            if (cmdline.contains("UnityKills", ignoreCase = true)) return@scanProc
-            val score = processScore(cmdline)
-            if (score > bestScore) {
-                bestScore = score
-                best = Target(pid, cmdline)
-            }
-        }
-        return best
     }
 
     private fun scanProc(block: (pid: Int, cmdline: String) -> Unit) {
@@ -114,20 +74,4 @@ object ProcessFinder {
         }
     }
 
-    private fun isMlbbRelated(cmdline: String): Boolean {
-        if (cmdline.isBlank()) return false
-        return cmdline.contains("UnityKillsMe", ignoreCase = true) ||
-            cmdline.contains("UnityKills", ignoreCase = true) ||
-            cmdline.contains("com.mobile.legends", ignoreCase = true) ||
-            cmdline.contains("mobile.legends", ignoreCase = true)
-    }
-
-    private fun processScore(cmdline: String): Int {
-        var s = 0
-        if (cmdline.contains("UnityKillsMe", ignoreCase = true)) s += 100
-        else if (cmdline.contains("UnityKills", ignoreCase = true)) s += 80
-        if (cmdline.contains("com.mobile.legends", ignoreCase = true)) s += 40
-        if (cmdline.contains(":")) s += 10
-        return s
-    }
 }
