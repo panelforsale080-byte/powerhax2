@@ -41,7 +41,7 @@ class AboutDialog(context: Context) : Dialog(context) {
     private fun bindDetails() {
         val details = listOf(
             Detail(R.id.detail_developer, R.drawable.ic_user, "Developer", "Accel"),
-            Detail(R.id.detail_version, R.drawable.ic_package, "App Version", "1.0")
+            Detail(R.id.detail_version, R.drawable.ic_package, "App Version", "1.6.59")
         )
 
         details.forEach { detail ->

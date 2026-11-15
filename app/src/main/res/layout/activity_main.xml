@@ -76,7 +76,7 @@
                     android:paddingTop="4dp"
                     android:paddingEnd="8dp"
                     android:paddingBottom="4dp"
-                    android:text="v1.0"
+                    android:text="v1.6.59"
                     android:textColor="@color/loader_text_secondary"
                     android:textSize="7sp" />
             </LinearLayout>
@@ -487,19 +487,23 @@
         android:orientation="horizontal"
         android:translationX="268dp">
 
-        <TextView
+        <FrameLayout
             android:id="@+id/library_menu_button"
-            android:layout_width="32dp"
-            android:layout_height="92dp"
+            android:layout_width="40dp"
+            android:layout_height="56dp"
             android:background="@drawable/edge_tab"
             android:clickable="true"
             android:contentDescription="Libraries"
-            android:focusable="true"
-            android:fontFamily="@font/pixel"
-            android:gravity="center"
-            android:text="l\ni\nb\ns"
-            android:textColor="@color/loader_text_primary"
-            android:textSize="8sp" />
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="center"
+                android:contentDescription="Libraries"
+                android:scaleType="centerCrop"
+                android:src="@drawable/app_logo" />
+        </FrameLayout>
 
         <LinearLayout
             android:id="@+id/library_panel"

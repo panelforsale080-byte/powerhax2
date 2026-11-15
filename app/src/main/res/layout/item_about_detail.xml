@@ -27,7 +27,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="end"
-        android:text="Astral Loader"
+        android:text=""
         android:textColor="@color/loader_accent"
         android:textSize="11sp"
         android:textStyle="bold" />
