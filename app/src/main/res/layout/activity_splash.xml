@@ -2,53 +2,60 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/loader_background"
-    android:padding="20dp">
+    android:background="@drawable/bg_main_gradient"
+    android:padding="24dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:background="@drawable/splash_modal"
+        android:background="@drawable/accel_card_elevated"
         android:gravity="center_horizontal"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="22dp">
 
         <ImageView
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:contentDescription="Accel"
-            android:src="@drawable/accel_mark" />
+            android:src="@mipmap/ic_launcher" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             android:fontFamily="@font/pixel"
-            android:text="AccelLoader"
-            android:textColor="#F1F4F8"
-            android:textSize="8sp" />
+            android:text="Accel"
+            android:textColor="@color/loader_text_primary"
+            android:textSize="12sp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:fontFamily="@font/pixel"
             android:text="Owner Xorel"
-            android:textColor="#B5B5B5"
-            android:textSize="6sp" />
+            android:textColor="@color/loader_text_muted"
+            android:textSize="10sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center"
+            android:text="initializing…"
+            android:textColor="@color/loader_text_secondary"
+            android:textSize="10sp" />
 
         <ProgressBar
             android:id="@+id/progressBarSplash"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
-            android:layout_height="4dp"
-            android:layout_marginTop="18dp"
+            android:layout_height="8dp"
+            android:layout_marginTop="12dp"
             android:indeterminate="false"
             android:max="100"
             android:progress="0"
-            android:progressBackgroundTint="#44FFFFFF"
-            android:progressTint="@color/loader_text_primary"
+            android:progressDrawable="@drawable/progress_download"
             android:saveEnabled="false" />
     </LinearLayout>
 </FrameLayout>

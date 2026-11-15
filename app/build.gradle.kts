@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "astral.loader"
+    namespace = "com.accel.loader"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "astral.loader"
+        applicationId = "com.accel.loader"
         minSdk = 28
         targetSdk = 35
         versionCode = 1
@@ -61,7 +61,7 @@ android {
 }
 
 base {
-    archivesName.set("AccelLoader")
+    archivesName.set("Accel")
 }
 
 dependencies {

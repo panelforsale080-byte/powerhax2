@@ -1,4 +1,4 @@
-package astral.loader
+package com.accel.loader
 
 import org.json.JSONArray
 import java.io.File

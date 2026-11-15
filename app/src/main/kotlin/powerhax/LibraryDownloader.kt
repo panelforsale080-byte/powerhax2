@@ -1,4 +1,4 @@
-package astral.loader
+package com.accel.loader
 
 import android.app.Notification
 import android.app.NotificationChannel

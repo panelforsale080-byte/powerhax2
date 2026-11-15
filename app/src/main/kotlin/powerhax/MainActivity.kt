@@ -1,4 +1,4 @@
-package astral.loader
+package com.accel.loader
 
 import android.app.NotificationManager
 import android.content.Context
@@ -88,6 +88,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var injectMethodLabel: TextView
     private lateinit var libraryDownloadStatus: TextView
     private lateinit var libraryDownloadProgress: ProgressBar
+    private lateinit var libraryDownloadPercent: TextView
+    private lateinit var featureCacheLabel: TextView
     private val injectLogBuffer = StringBuilder()
     private val injectLogLines = ArrayDeque<String>(6)
     private lateinit var injectUiLog: InjectUiLog
@@ -140,9 +142,13 @@ class MainActivity : AppCompatActivity() {
         injectMethodLabel = findViewById(R.id.inject_method_label)
         libraryDownloadStatus = findViewById(R.id.library_download_status)
         libraryDownloadProgress = findViewById(R.id.library_download_progress)
+        libraryDownloadPercent = findViewById(R.id.library_download_percent)
+        featureCacheLabel = findViewById(R.id.feature_cache_label)
         injectUiLog = InjectUiLog { line -> appendInjectLogLine(line) }
         appBanner = findViewById(R.id.app_banner)
         appBanner.setImageResource(R.drawable.accel_mark)
+        findViewById<TextView>(R.id.header_build).text =
+            "v${packageManager.getPackageInfo(packageName, 0).versionName}"
 
         findViewById<MaterialButton>(R.id.telegram_button).setOnClickListener {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/axcelLOki")))
@@ -686,7 +692,9 @@ class MainActivity : AppCompatActivity() {
         }
         isLoadingLibrary = true
         setLibraryChip("load")
-        libraryDownloadStatus.text = "downloading…"
+        libraryDownloadStatus.text = "downloading module…"
+        setDownloadProgressUi(0, showBar = true)
+        featureCacheLabel.text = "fetching…"
         loginButton.isEnabled = false
         librarySpinner.isEnabled = false
         delaySpinner.isEnabled = false
@@ -745,10 +753,21 @@ class MainActivity : AppCompatActivity() {
     private fun applyLibraryReadyUi() {
         val f = File(cacheDir, payloadFileName)
         val kb = (f.length() / 1024).coerceAtLeast(1)
-        libraryDownloadStatus.text = "module ready"
-        libraryDownloadProgress.visibility = View.GONE
+        libraryDownloadStatus.text = "module ready — stored locally"
+        setDownloadProgressUi(100, showBar = false)
         findViewById<TextView>(R.id.library_package).text = "$payloadFileName · ${kb}kb"
+        featureCacheLabel.text = "cached · ${kb}kb"
         setLibraryChip("ready")
+    }
+
+    private fun setDownloadProgressUi(percent: Int, showBar: Boolean) {
+        val clamped = percent.coerceIn(0, 100)
+        libraryDownloadPercent.text = "$clamped%"
+        libraryDownloadProgress.progress = clamped
+        libraryDownloadProgress.visibility = if (showBar) View.VISIBLE else View.GONE
+        if (!showBar && clamped >= 100) {
+            libraryDownloadPercent.text = "100%"
+        }
     }
 
     private fun proceedWithDownload() {
@@ -764,9 +783,8 @@ class MainActivity : AppCompatActivity() {
                     return@launch
                 }
                 withContext(Dispatchers.Main) {
-                    libraryDownloadStatus.text = "downloading…"
-                    libraryDownloadProgress.visibility = View.VISIBLE
-                    libraryDownloadProgress.progress = 0
+                    libraryDownloadStatus.text = "downloading module…"
+                    setDownloadProgressUi(0, showBar = true)
                 }
                 downloadLibraryIfNeeded(this@MainActivity, libraryDownloadUrl, payloadFileName) { success ->
                 if (success) {
@@ -1030,12 +1048,11 @@ class MainActivity : AppCompatActivity() {
                         success = true
                     } else {
                         withContext(Dispatchers.Main) {
-                            libraryDownloadProgress.visibility = View.VISIBLE
-                            libraryDownloadProgress.progress = 0
+                            setDownloadProgressUi(0, showBar = true)
                         }
                         success = libraryDownloader.download(url, libraryFileName) { progress ->
                             runOnUiThread {
-                                libraryDownloadProgress.progress = progress
+                                setDownloadProgressUi(progress, showBar = true)
                             }
                         }
                         if (success && outputFile.exists()) {
@@ -1050,9 +1067,6 @@ class MainActivity : AppCompatActivity() {
 
             withContext(Dispatchers.Main) {
                 callback(success)
-                if (::libraryDownloadProgress.isInitialized) {
-                    libraryDownloadProgress.visibility = View.GONE
-                }
             }
         }
     }
@@ -1062,12 +1076,13 @@ class MainActivity : AppCompatActivity() {
             val isRooted = commandRunner.hasRootAccess()
             withContext(Dispatchers.Main) {
                 if (isRooted) {
-                    rootStatusView.text = "ROOTED ENVIRONMENT"
-                    rootStatusView.setTextColor(Color.GREEN)
-                    rootStatusView.visibility = View.VISIBLE
+                    rootStatusView.text = "rooted · ready"
+                    rootStatusView.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.loader_status_active))
                 } else {
-                    rootStatusView.visibility = View.GONE
+                    rootStatusView.text = "no root"
+                    rootStatusView.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.loader_status_maintenance))
                 }
+                rootStatusView.visibility = View.VISIBLE
             }
         }
     }

@@ -1,19 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="background_color_dark">#80383838</color>
-    <color name="textColor">#F2F2F2</color>
-    <color name="mtrl_textinput_default_box_stroke_color">#6E6873</color>
-    <color name="loader_background">#66404040</color>
-    <color name="loader_surface">#994A4A4A</color>
-    <color name="loader_surface_alt">#88555555</color>
-    <color name="loader_surface_soft">#77666666</color>
-    <color name="loader_border">#A0B0B0B0</color>
-    <color name="loader_border_soft">#80A0A0A0</color>
-    <color name="loader_text_primary">#F4F4F4</color>
-    <color name="loader_text_secondary">#D0D0D0</color>
-    <color name="loader_text_muted">#B5B5B5</color>
-    <color name="loader_accent">#C8C8C8</color>
-    <color name="loader_scrim">#66303030</color>
-    <color name="loader_status_active">#31D17C</color>
-    <color name="loader_status_maintenance">#FFD37A</color>
+    <color name="background_color_dark">#FF0D0D0D</color>
+    <color name="textColor">#FFF5F5F5</color>
+    <color name="mtrl_textinput_default_box_stroke_color">#FF5A5A5A</color>
+
+    <color name="loader_background">#FF121212</color>
+    <color name="loader_background_deep">#FF080808</color>
+    <color name="loader_surface">#FF1E1E1E</color>
+    <color name="loader_surface_alt">#FF262626</color>
+    <color name="loader_surface_soft">#FF2E2E2E</color>
+    <color name="loader_border">#FF3D3D3D</color>
+    <color name="loader_border_soft">#FF333333</color>
+    <color name="loader_text_primary">#FFF2F2F2</color>
+    <color name="loader_text_secondary">#FFB8B8B8</color>
+    <color name="loader_text_muted">#FF8A8A8A</color>
+    <color name="loader_accent">#FFE0E0E0</color>
+    <color name="loader_scrim">#CC000000</color>
+    <color name="loader_status_active">#FF3DDC97</color>
+    <color name="loader_status_maintenance">#FFFFC857</color>
+    <color name="loader_progress_track">#FF2A2A2A</color>
+    <color name="loader_progress_fill">#FFBBBBBB</color>
+    <color name="loader_feature_icon">#FFD4D4D4</color>
 </resources>

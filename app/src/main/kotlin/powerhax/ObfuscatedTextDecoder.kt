@@ -1,4 +1,4 @@
-package astral.loader
+package com.accel.loader
 
 object ObfuscatedTextDecoder {
 

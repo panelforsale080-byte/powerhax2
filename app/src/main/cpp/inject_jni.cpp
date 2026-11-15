@@ -3,7 +3,7 @@
 extern "C" int accel_inject_c(const char *target, const char *lib);
 
 extern "C" JNIEXPORT jint JNICALL
-Java_astral_loader_AccelInject_nativeInject(JNIEnv *env, jclass, jstring jTarget, jstring jLib) {
+Java_com_accel_loader_AccelInject_nativeInject(JNIEnv *env, jclass, jstring jTarget, jstring jLib) {
     if (!jTarget || !jLib) return -11;
     const char *target = env->GetStringUTFChars(jTarget, nullptr);
     const char *lib = env->GetStringUTFChars(jLib, nullptr);

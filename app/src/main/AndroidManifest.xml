@@ -15,8 +15,8 @@
 
     <application
         android:allowBackup="false"
-        android:icon="@drawable/astral_logo"
-        android:roundIcon="@drawable/astral_logo"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"

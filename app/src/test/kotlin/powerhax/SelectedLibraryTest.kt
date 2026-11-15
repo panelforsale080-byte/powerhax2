@@ -1,4 +1,4 @@
-package astral.loader
+package com.accel.loader
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

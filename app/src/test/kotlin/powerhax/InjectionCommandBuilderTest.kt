@@ -1,4 +1,4 @@
-package astral.loader
+package com.accel.loader
 
 import java.io.File
 import org.junit.Assert.assertTrue

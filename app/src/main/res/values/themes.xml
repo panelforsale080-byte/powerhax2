@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
   <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="android:windowIsTranslucent">true</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowBackground">@color/loader_background</item>
         <item name="android:navigationBarColor">@color/background_color_dark</item>
         <item name="android:textColor">@color/textColor</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
