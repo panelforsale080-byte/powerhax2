@@ -48,6 +48,12 @@ class LoaderPreferences(context: Context) {
         preferences.edit().putString(KEY_MODULE_NOTIFIED, sha).apply()
     }
 
+    fun getMenuKey(): String = preferences.getString(KEY_MENU_KEY, "") ?: ""
+
+    fun saveMenuKey(key: String) {
+        preferences.edit().putString(KEY_MENU_KEY, key).apply()
+    }
+
     private companion object {
         const val PREFERENCES_NAME = "loaderPrefs"
         const val KEY_MODE = "injection_mode"
@@ -56,6 +62,7 @@ class LoaderPreferences(context: Context) {
         const val KEY_INJECT_TARGET = "inject_target_winning"
         const val KEY_MODULE_SHA = "module_sha"
         const val KEY_MODULE_NOTIFIED = "module_notified_sha"
+        const val KEY_MENU_KEY = "menu_key"
         const val MODE_AUTO = "auto"
         const val DEFAULT_METHOD = "2"
     }

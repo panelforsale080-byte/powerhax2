@@ -112,6 +112,9 @@ class MainActivity : AppCompatActivity() {
     private val filteredLibraries = mutableListOf<JSONObject>()
     private var isDrawerOpen = false
     private var moduleUpdatePending = false
+    private var menuKeyValid = false
+    private lateinit var menuKeyInput: EditText
+    private lateinit var menuKeyValidity: TextView
     private var payloadFileName: String = LIBRARY_FILE_NAME
         
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -138,6 +141,12 @@ class MainActivity : AppCompatActivity() {
         licenseKeyInputLayout = findViewById(R.id.input_layout)
         findViewById<View>(R.id.license_key_label).visibility = View.GONE
         licenseKeyInputLayout.visibility = View.GONE
+        menuKeyInput = findViewById(R.id.menu_key_input)
+        menuKeyValidity = findViewById(R.id.menu_key_validity)
+        findViewById<View>(R.id.menu_key_check).setOnClickListener {
+            checkMenuKey(menuKeyInput.text?.toString().orEmpty())
+        }
+        refreshMenuKeyFromDevice()
         loginButton = findViewById(R.id.login_button)
         radioGroup = findViewById(R.id.radioGroup)
         radioAuto = findViewById(R.id.radio_auto)
@@ -198,6 +207,10 @@ class MainActivity : AppCompatActivity() {
 
         loginButton.setOnClickListener {
             if (isReadyToInject) {
+                if (!menuKeyValid) {
+                    showToast("Menu key is not valid")
+                    return@setOnClickListener
+                }
                 injectLibrary(payloadFileName)
                 showToast("Injecting, please wait...")
                 loginButton.isEnabled = false
@@ -280,6 +293,46 @@ class MainActivity : AppCompatActivity() {
         handleSelectedJsonData(selectedLibraryJson)
     }
     
+    private fun refreshMenuKeyFromDevice() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val fromMenu = MenuKeyFiles.read()
+            val saved = loaderPreferences.getMenuKey()
+            val key = when {
+                !fromMenu.isNullOrBlank() -> fromMenu
+                saved.isNotBlank() -> saved
+                else -> ""
+            }
+            if (key.isBlank()) return@launch
+            withContext(Dispatchers.Main) { menuKeyInput.setText(key) }
+            showMenuKey(MenuKeyClient.check(key), key)
+        }
+    }
+
+    private fun checkMenuKey(typed: String) {
+        menuKeyValidity.text = "Checking..."
+        lifecycleScope.launch(Dispatchers.IO) {
+            showMenuKey(MenuKeyClient.check(typed), typed)
+        }
+    }
+
+    private suspend fun showMenuKey(result: MenuKeyList.Result, typed: String) {
+        val token = typed.trim().split(Regex("\\s+")).firstOrNull { it.contains('-') && it.length >= 6 } ?: typed.trim()
+        if (token.isNotBlank() && result.status != MenuKeyList.Status.OFFLINE && result.status != MenuKeyList.Status.EMPTY) {
+            loaderPreferences.saveMenuKey(token)
+        }
+        if (result.status == MenuKeyList.Status.VALID) MenuKeyFiles.publish(token)
+        withContext(Dispatchers.Main) {
+            menuKeyValid = result.status == MenuKeyList.Status.VALID
+            menuKeyValidity.text = MenuKeyList.label(result)
+            menuKeyValidity.setTextColor(
+                ContextCompat.getColor(
+                    this@MainActivity,
+                    if (menuKeyValid) R.color.loader_status_active else R.color.loader_status_maintenance
+                )
+            )
+        }
+    }
+
     private fun loadLibraryCatalog() {
         lifecycleScope.launch {
             val root = catalogClient.load().getOrElse { _ ->
