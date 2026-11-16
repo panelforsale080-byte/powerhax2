@@ -499,7 +499,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/pixel"
-                    android:text="menu key"
+                        android:text="license"
                     android:textColor="@color/loader_text_muted"
                     android:textSize="7sp" />
 
@@ -508,7 +508,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="3dp"
-                    android:text="Enter the menu key before download"
+                    android:text="enter license key first"
                     android:textColor="@color/loader_text_primary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -625,7 +625,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
-                        android:text="CODM files on GitHub"
+                        android:text="library"
                         android:textColor="@color/loader_text_muted"
                         android:textSize="8sp" />
                 </LinearLayout>

@@ -208,7 +208,7 @@ class MainActivity : AppCompatActivity() {
         loginButton.setOnClickListener {
             if (isReadyToInject) {
                 if (!menuKeyValid) {
-                    showToast("Menu key is not valid")
+                    showToast("enter license key first")
                     return@setOnClickListener
                 }
                 injectLibrary(payloadFileName)
@@ -318,7 +318,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkMenuKey(typed: String) {
-        menuKeyValidity.text = "Checking..."
+        menuKeyValidity.text = "checking"
         lifecycleScope.launch(Dispatchers.IO) {
             val checked = MenuKeyClient.check(typed)
             val token = menuToken(typed)
@@ -496,7 +496,7 @@ class MainActivity : AppCompatActivity() {
 
         if (visibleLibraries.isEmpty()) {
             val emptyState = TextView(this).apply {
-                text = if (!githubListed) "Checking GitHub..." else "No CODM module on GitHub"
+                text = if (!githubListed) "loading" else "no library"
                 setTextColor(ContextCompat.getColor(this@MainActivity, R.color.loader_text_muted))
                 textSize = 11f
                 setPadding(12, 18, 12, 18)
@@ -739,7 +739,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun beginLibraryLoad() {
         if (!menuKeyValid) {
-            showToast("Enter a valid menu key first")
+            showToast("enter license key first")
             return
         }
         if (isLoadingLibrary || isReadyToInject) return

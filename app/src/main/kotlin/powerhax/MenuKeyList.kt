@@ -36,7 +36,7 @@ object MenuKeyList {
             Status.VALID -> "${result.name} valid until ${result.until}"
             Status.EXPIRED -> "${result.name} expired ${result.until}"
             Status.INVALID -> "Invalid key"
-            Status.EMPTY -> "Enter the menu key"
+            Status.EMPTY -> "enter license key first"
             Status.OFFLINE -> "Key list unavailable"
         }
     }
