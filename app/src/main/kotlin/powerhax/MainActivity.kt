@@ -51,8 +51,6 @@ import com.google.android.material.button.MaterialButton
 class MainActivity : AppCompatActivity() {
 
     private companion object {
-        const val SERVER_LIST_URL = "https://potpot.x10.mx/Loader/index.php"
-        const val PANEL_URL = "https://potpot.x10.mx/connect"
         const val DEFAULT_GAME_TYPE = "CODM"
         const val DEFAULT_GAME_PACKAGE = "com.garena.game.codm"
         const val LIBRARY_FILE_NAME = "libcodm.so"
@@ -98,7 +96,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var injectUiLog: InjectUiLog
     
     private val commandRunner = CommandRunner()
-    private val catalogClient = LibraryCatalogClient(SERVER_LIST_URL)
     private var isReadyToInject: Boolean = false
     private var isLoadingLibrary: Boolean = false
     private var remoteLibrarySize: Int = 0
@@ -240,7 +237,6 @@ class MainActivity : AppCompatActivity() {
             true
         }
         
-        loadLibraryCatalog()
         refreshMenuKeyFromDevice()
         updateRootStatus()
     }
@@ -370,29 +366,6 @@ class MainActivity : AppCompatActivity() {
         startCodmLoad()
     }
 
-    private fun loadLibraryCatalog() {
-        lifecycleScope.launch {
-            val root = catalogClient.load().getOrElse { _ ->
-                Toast.makeText(this@MainActivity, "Failed to load servers data", Toast.LENGTH_SHORT).show()
-                return@launch
-            }
-
-            val meta = root.optJSONObject("META")
-            if (meta != null) {
-                val requiredCode = meta.optInt("APP_VERSION_CODE", -1)
-                val reason = meta.optString("VERSION_REASON", "Update required.")
-                val updateUrl = meta.optString("UPDATE_URL")
-
-                val currentCode = getAppVersionCode()
-                if (requiredCode != -1 && currentCode < requiredCode) {
-                    showVersionMismatchDialog(reason, updateUrl)
-                    return@launch
-                }
-            }
-
-        }
-    }
-    
     private fun drawerClosedOffset(): Float {
         val panel = findViewById<View>(R.id.library_panel)
         return if (panel.width > 0) panel.width.toFloat() else 268f * resources.displayMetrics.density
