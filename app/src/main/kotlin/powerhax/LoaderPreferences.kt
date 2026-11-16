@@ -50,8 +50,16 @@ class LoaderPreferences(context: Context) {
 
     fun getMenuKey(): String = preferences.getString(KEY_MENU_KEY, "") ?: ""
 
-    fun saveMenuKey(key: String) {
-        preferences.edit().putString(KEY_MENU_KEY, key).apply()
+    fun getMenuKeyName(): String = preferences.getString(KEY_MENU_NAME, "") ?: ""
+
+    fun getMenuKeyUntil(): String = preferences.getString(KEY_MENU_UNTIL, "") ?: ""
+
+    fun saveMenuKey(key: String, name: String = "", until: String = "") {
+        preferences.edit()
+            .putString(KEY_MENU_KEY, key)
+            .putString(KEY_MENU_NAME, name)
+            .putString(KEY_MENU_UNTIL, until)
+            .apply()
     }
 
     private companion object {
@@ -63,6 +71,8 @@ class LoaderPreferences(context: Context) {
         const val KEY_MODULE_SHA = "module_sha"
         const val KEY_MODULE_NOTIFIED = "module_notified_sha"
         const val KEY_MENU_KEY = "menu_key"
+        const val KEY_MENU_NAME = "menu_key_name"
+        const val KEY_MENU_UNTIL = "menu_key_until"
         const val MODE_AUTO = "auto"
         const val DEFAULT_METHOD = "2"
     }

@@ -113,6 +113,7 @@ class MainActivity : AppCompatActivity() {
     private var isDrawerOpen = false
     private var moduleUpdatePending = false
     private var menuKeyValid = false
+    private var codmLoadStarted = false
     private lateinit var menuKeyInput: EditText
     private lateinit var menuKeyValidity: TextView
     private var payloadFileName: String = LIBRARY_FILE_NAME
@@ -146,7 +147,6 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.menu_key_check).setOnClickListener {
             checkMenuKey(menuKeyInput.text?.toString().orEmpty())
         }
-        refreshMenuKeyFromDevice()
         loginButton = findViewById(R.id.login_button)
         radioGroup = findViewById(R.id.radioGroup)
         radioAuto = findViewById(R.id.radio_auto)
@@ -240,8 +240,8 @@ class MainActivity : AppCompatActivity() {
             true
         }
         
-        startCodmLoad()
         loadLibraryCatalog()
+        refreshMenuKeyFromDevice()
         updateRootStatus()
     }
 
@@ -294,43 +294,80 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun refreshMenuKeyFromDevice() {
+        val saved = savedMenuPass(loaderPreferences.getMenuKey())
+        if (saved != null && saved.status == MenuKeyList.Status.VALID) {
+            menuKeyInput.setText(loaderPreferences.getMenuKey())
+            applyMenuKey(saved, loaderPreferences.getMenuKey(), startDownload = true)
+        }
         lifecycleScope.launch(Dispatchers.IO) {
             val fromMenu = MenuKeyFiles.read()
-            val saved = loaderPreferences.getMenuKey()
+            val savedKey = loaderPreferences.getMenuKey()
             val key = when {
                 !fromMenu.isNullOrBlank() -> fromMenu
-                saved.isNotBlank() -> saved
+                savedKey.isNotBlank() -> savedKey
                 else -> ""
             }
             if (key.isBlank()) return@launch
-            withContext(Dispatchers.Main) { menuKeyInput.setText(key) }
-            showMenuKey(MenuKeyClient.check(key), key)
+            withContext(Dispatchers.Main) {
+                if (menuKeyInput.text.isNullOrBlank()) menuKeyInput.setText(key)
+            }
+            val checked = MenuKeyClient.check(key)
+            val result = if (checked.status == MenuKeyList.Status.OFFLINE) savedMenuPass(key) ?: checked else checked
+            showMenuKey(result, key)
         }
     }
 
     private fun checkMenuKey(typed: String) {
         menuKeyValidity.text = "Checking..."
         lifecycleScope.launch(Dispatchers.IO) {
-            showMenuKey(MenuKeyClient.check(typed), typed)
+            val checked = MenuKeyClient.check(typed)
+            val token = menuToken(typed)
+            val result = if (checked.status == MenuKeyList.Status.OFFLINE) savedMenuPass(token) ?: checked else checked
+            showMenuKey(result, typed)
         }
     }
 
-    private suspend fun showMenuKey(result: MenuKeyList.Result, typed: String) {
-        val token = typed.trim().split(Regex("\\s+")).firstOrNull { it.contains('-') && it.length >= 6 } ?: typed.trim()
-        if (token.isNotBlank() && result.status != MenuKeyList.Status.OFFLINE && result.status != MenuKeyList.Status.EMPTY) {
-            loaderPreferences.saveMenuKey(token)
-        }
-        if (result.status == MenuKeyList.Status.VALID) MenuKeyFiles.publish(token)
-        withContext(Dispatchers.Main) {
-            menuKeyValid = result.status == MenuKeyList.Status.VALID
-            menuKeyValidity.text = MenuKeyList.label(result)
-            menuKeyValidity.setTextColor(
-                ContextCompat.getColor(
-                    this@MainActivity,
-                    if (menuKeyValid) R.color.loader_status_active else R.color.loader_status_maintenance
-                )
+    private fun savedMenuPass(token: String): MenuKeyList.Result? {
+        val saved = loaderPreferences.getMenuKey()
+        val until = loaderPreferences.getMenuKeyUntil()
+        if (token.isBlank() || !saved.equals(token, ignoreCase = true) || until.isBlank()) return null
+        val name = loaderPreferences.getMenuKeyName().ifBlank { "key" }
+        return MenuKeyList.check("$name $saved $until", token, java.time.LocalDate.now())
+    }
+
+    private fun menuToken(typed: String): String {
+        return typed.trim().split(Regex("\\s+")).firstOrNull { it.contains('-') && it.length >= 6 } ?: typed.trim()
+    }
+
+    private fun applyMenuKey(result: MenuKeyList.Result, typed: String, startDownload: Boolean) {
+        val token = menuToken(typed)
+        menuKeyValid = result.status == MenuKeyList.Status.VALID
+        menuKeyValidity.text = MenuKeyList.label(result)
+        menuKeyValidity.setTextColor(
+            ContextCompat.getColor(
+                this,
+                if (menuKeyValid) R.color.loader_status_active else R.color.loader_status_maintenance
             )
+        )
+        if (menuKeyValid && startDownload) startCodmLoadIfNeeded()
+    }
+
+    private suspend fun showMenuKey(result: MenuKeyList.Result, typed: String) {
+        val token = menuToken(typed)
+        if (token.isNotBlank() && (result.status == MenuKeyList.Status.VALID || result.status == MenuKeyList.Status.EXPIRED)) {
+            loaderPreferences.saveMenuKey(token, result.name, result.until)
         }
+        if (result.status == MenuKeyList.Status.VALID) MenuKeyFiles.publish(token, result.name, result.until)
+        withContext(Dispatchers.Main) {
+            applyMenuKey(result, typed, startDownload = true)
+            if (!menuKeyValid) isReadyToInject = false
+        }
+    }
+
+    private fun startCodmLoadIfNeeded() {
+        if (!menuKeyValid || codmLoadStarted) return
+        codmLoadStarted = true
+        startCodmLoad()
     }
 
     private fun loadLibraryCatalog() {
@@ -701,6 +738,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun beginLibraryLoad() {
+        if (!menuKeyValid) {
+            showToast("Enter a valid menu key first")
+            return
+        }
         if (isLoadingLibrary || isReadyToInject) return
         val detectedVpn = SplashActivity.getDetectedVPN()
         if (detectedVpn != null) {
